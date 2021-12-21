@@ -1,0 +1,35 @@
+package cn.pioneeruniverse;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.SpringCloudApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.cloud.netflix.feign.EnableFeignClients;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+@SpringCloudApplication
+@EnableAutoConfiguration
+@EnableDiscoveryClient
+@Configuration
+@ComponentScan
+@SpringBootApplication
+@EnableFeignClients
+
+public class ProjectManageApplication {
+
+	public static void main(String args[]){
+		
+		SpringApplication.run(ProjectManageApplication.class, args);
+	}
+
+
+	@Bean
+	public BCryptPasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder(4);
+	}
+}

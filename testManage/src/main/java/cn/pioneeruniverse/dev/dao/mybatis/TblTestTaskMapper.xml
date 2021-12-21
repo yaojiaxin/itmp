@@ -1,0 +1,1257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.pioneeruniverse.dev.dao.mybatis.TblTestTaskMapper">
+  <resultMap id="BaseResultMap" type="cn.pioneeruniverse.dev.entity.TblTestTask">
+    <id column="ID" jdbcType="BIGINT" property="id" />
+    <result column="TEST_TASK_NAME" jdbcType="VARCHAR" property="testTaskName" />
+    <result column="TEST_TASK_CODE" jdbcType="VARCHAR" property="testTaskCode" />
+    <result column="TEST_TASK_OVERVIEW" jdbcType="VARCHAR" property="testTaskOverview" />
+    <result column="REQUIREMENT_FEATURE_ID" jdbcType="BIGINT" property="requirementFeatureId" />
+    <result column="TEST_TASK_STATUS" jdbcType="TINYINT" property="testTaskStatus" />
+    <result column="TASK_ASSIGN_USER_ID" jdbcType="BIGINT" property="taskAssignUserId" />
+    <result column="TEST_USER_ID" jdbcType="BIGINT" property="testUserId" />
+    <result column="PLAN_START_DATE" jdbcType="DATE" property="planStartDate" />
+    <result column="PLAN_END_DATE" jdbcType="DATE" property="planEndDate" />
+    <result column="PLAN_WORKLOAD" jdbcType="DOUBLE" property="planWorkload" />
+    <result column="ACTUAL_START_DATE" jdbcType="DATE" property="actualStartDate" />
+    <result column="ACTUAL_END_DATE" jdbcType="DATE" property="actualEndDate" />
+    <result column="ACTUAL_WORKLOAD" jdbcType="DOUBLE" property="actualWorkload" />
+    <result column="DESIGN_CASE_NUMBER" jdbcType="INTEGER" property="designCaseNumber" />
+    <result column="EXECUTE_CASE_NUMBER" jdbcType="INTEGER" property="executeCaseNumber" />
+    
+    <result column="COMMISSIONING_WINDOW_ID" jdbcType="BIGINT" property="commissioningWindowId" />
+    <result column="PARENT_ID" jdbcType="BIGINT" property="parentId" />
+    <result column="DEPENDENCE_SYSTEM_IDS" jdbcType="VARCHAR" property="dependenceSystemIds" />
+    <result column="DEPENDENCE_SYSTEM_MODULE_IDS" jdbcType="VARCHAR" property="dependenceSystemModuleIds" />
+    <result column="STATUS" jdbcType="TINYINT" property="status" />
+     <result column="TEST_STAGE" jdbcType="TINYINT" property="testStage" />
+    <result column="CREATE_BY" jdbcType="BIGINT" property="createBy" />
+    <result column="CREATE_DATE" jdbcType="TIMESTAMP" property="createDate" />
+    <result column="LAST_UPDATE_BY" jdbcType="BIGINT" property="lastUpdateBy" />
+    <result column="LAST_UPDATE_DATE" jdbcType="TIMESTAMP" property="lastUpdateDate" />
+
+    <result column="SYSTEM_ID" jdbcType="VARCHAR" property="systemId" />
+    <result column="SYSTEM_NAME" jdbcType="VARCHAR" property="systemName" />
+    <result column="SYSTEM_CODE" jdbcType="VARCHAR" property="systemCode" />
+    <result column="FEATURE_CODE" jdbcType="VARCHAR" property="featureCode" />
+    <result column="FEATURE_NAME" jdbcType="VARCHAR" property="featureName" />
+     <result column="REQUIREMENT_FEATURE_STATUS" jdbcType="TINYINT" property="featureStatus" />
+    <result column="USER_NAME" jdbcType="VARCHAR" property="userName" />
+    <result column="CREATE_NAME" jdbcType="VARCHAR" property="createName" />
+     <result column="REQUIREMENT_CODE" jdbcType="VARCHAR" property="requirementCode" />
+     <result column="WINDOW_NAME" jdbcType="VARCHAR" property="windowName" />
+    
+  </resultMap>
+  <sql id="Base_Column_List">
+    ID, TEST_TASK_NAME, TEST_TASK_CODE, TEST_TASK_OVERVIEW, REQUIREMENT_FEATURE_ID, TEST_TASK_STATUS, TASK_ASSIGN_USER_ID,
+    TEST_USER_ID, PLAN_START_DATE, PLAN_END_DATE, PLAN_WORKLOAD, ACTUAL_START_DATE, ACTUAL_END_DATE, 
+    ACTUAL_WORKLOAD, COMMISSIONING_WINDOW_ID, PARENT_ID, DEPENDENCE_SYSTEM_IDS, DEPENDENCE_SYSTEM_MODULE_IDS, 
+    STATUS, CREATE_BY, CREATE_DATE, LAST_UPDATE_BY, LAST_UPDATE_DATE
+  </sql>
+  <!-- 根据测试任务id 把状态置为取消 -->
+   <update id="updateStatus" parameterType="Long">
+    update tbl_test_task
+   <set>
+    TEST_TASK_STATUS = 0
+   </set>
+    where REQUIREMENT_FEATURE_ID =#{requirementFeatureId}
+  </update>
+   <!-- 修改投产窗口字段同开发任务 -->
+  <update id="updateCommssioningWindowId" parameterType="cn.pioneeruniverse.dev.entity.TblRequirementFeature">
+	  update tbl_test_task 
+	  set COMMISSIONING_WINDOW_ID = #{commissioningWindowId}
+	  where REQUIREMENT_FEATURE_ID = #{id}
+  </update>
+  <update id="updateReqFeatureId" parameterType="map">
+  	update tbl_test_task
+  	set REQUIREMENT_FEATURE_ID = #{reqFeatureId}
+  	where ID in 
+  	<if test="testTasks != null">
+		<foreach item="item" index="index" collection="testTasks" open="(" separator="," close=")">
+				#{item.id}
+			 </foreach> 
+		</if>
+  </update>
+  <select id="findByReqFeatureId" parameterType="Long" resultType="cn.pioneeruniverse.dev.entity.TblTestTask">
+  	 select *
+    from tbl_test_task
+    where REQUIREMENT_FEATURE_ID =#{id}
+  </select>
+  <select id="findByReqFeature" resultType="map">
+  	SELECT ttsk.ID id,ttsk.TEST_TASK_NAME testTaskName,ttsk.TEST_TASK_CODE testTaskCode,ttsk.TEST_USER_ID testUserId,
+	ttsk.ACTUAL_START_DATE actualStartDate,ttsk.ACTUAL_END_DATE actualEndDate,ttsk.ACTUAL_WORKLOAD actualWorkload,
+	ttsk.TEST_STAGE testStage,ttsk.TEST_TASK_STATUS testTaskStatus,userinfo.USER_NAME testUserName,datadic.VALUE_NAME testTaskStatusName,
+	datadic2.VALUE_NAME testStageName
+	FROM tbl_test_task ttsk
+	LEFT JOIN tbl_user_info userinfo ON userinfo.ID = ttsk.TEST_USER_ID
+	LEFT JOIN tbl_data_dic datadic ON datadic.VALUE_CODE = ttsk.TEST_TASK_STATUS AND datadic.TERM_CODE = 'TBL_TEST_TASK_TEST_TASK_STATUS'
+	LEFT JOIN tbl_data_dic datadic2 ON datadic2.VALUE_CODE = ttsk.TEST_STAGE AND datadic2.TERM_CODE = 'TBL_TEST_TASK_TEST_STAGE'
+	WHERE ttsk.REQUIREMENT_FEATURE_ID =#{id}
+	AND ttsk.STATUS=1
+  </select>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from tbl_test_task
+    where ID = #{id,jdbcType=BIGINT}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
+    delete from tbl_test_task
+    where ID = #{id,jdbcType=BIGINT}
+  </delete>
+  <insert id="insert" parameterType="cn.pioneeruniverse.dev.entity.TblTestTask">
+    insert into tbl_test_task (ID, TEST_TASK_NAME, TEST_TASK_CODE, 
+      TEST_TASK_OVERVIEW, REQUIREMENT_FEATURE_ID, 
+      TEST_TASK_STATUS, TEST_USER_ID, PLAN_START_DATE, 
+      PLAN_END_DATE, PLAN_WORKLOAD, ACTUAL_START_DATE, 
+      ACTUAL_END_DATE, ACTUAL_WORKLOAD, COMMISSIONING_WINDOW_ID, 
+      PARENT_ID, DEPENDENCE_SYSTEM_IDS, DEPENDENCE_SYSTEM_MODULE_IDS, 
+      STATUS, CREATE_BY, CREATE_DATE, 
+      LAST_UPDATE_BY, LAST_UPDATE_DATE)
+    values (#{id,jdbcType=BIGINT}, #{testTaskName,jdbcType=VARCHAR}, #{testTaskCode,jdbcType=VARCHAR}, 
+      #{testTaskOverview,jdbcType=VARCHAR}, #{requirementFeatureId,jdbcType=BIGINT}, 
+      #{testTaskStatus,jdbcType=TINYINT}, #{testUserId,jdbcType=BIGINT}, #{planStartDate,jdbcType=DATE}, 
+      #{planEndDate,jdbcType=DATE}, #{planWorkload,jdbcType=DOUBLE}, #{actualStartDate,jdbcType=DATE}, 
+      #{actualEndDate,jdbcType=DATE}, #{actualWorkload,jdbcType=DOUBLE}, #{commissioningWindowId,jdbcType=BIGINT}, 
+      #{parentId,jdbcType=BIGINT}, #{dependenceSystemIds,jdbcType=VARCHAR}, #{dependenceSystemModuleIds,jdbcType=VARCHAR}, 
+      #{status,jdbcType=TINYINT}, #{createBy,jdbcType=BIGINT}, #{createDate,jdbcType=TIMESTAMP}, 
+      #{lastUpdateBy,jdbcType=BIGINT}, #{lastUpdateDate,jdbcType=TIMESTAMP})
+  </insert>
+  <insert id="insertSelective" parameterType="cn.pioneeruniverse.dev.entity.TblTestTask">
+    insert into tbl_test_task
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        ID,
+      </if>
+      <if test="testTaskName != null">
+        TEST_TASK_NAME,
+      </if>
+      <if test="testTaskCode != null">
+        TEST_TASK_CODE,
+      </if>
+      <if test="testTaskOverview != null">
+        TEST_TASK_OVERVIEW,
+      </if>
+      <if test="requirementFeatureId != null">
+        REQUIREMENT_FEATURE_ID,
+      </if>
+      <if test="testTaskStatus != null">
+        TEST_TASK_STATUS,
+      </if>
+      <if test="testUserId != null">
+        TEST_USER_ID,
+      </if>
+      <if test="planStartDate != null">
+        PLAN_START_DATE,
+      </if>
+      <if test="planEndDate != null">
+        PLAN_END_DATE,
+      </if>
+      <if test="planWorkload != null">
+        PLAN_WORKLOAD,
+      </if>
+      <if test="actualStartDate != null">
+        ACTUAL_START_DATE,
+      </if>
+      <if test="actualEndDate != null">
+        ACTUAL_END_DATE,
+      </if>
+      <if test="actualWorkload != null">
+        ACTUAL_WORKLOAD,
+      </if>
+      <if test="commissioningWindowId != null">
+        COMMISSIONING_WINDOW_ID,
+      </if>
+      <if test="parentId != null">
+        PARENT_ID,
+      </if>
+      <if test="dependenceSystemIds != null">
+        DEPENDENCE_SYSTEM_IDS,
+      </if>
+      <if test="dependenceSystemModuleIds != null">
+        DEPENDENCE_SYSTEM_MODULE_IDS,
+      </if>
+      <if test="status != null">
+        STATUS,
+      </if>
+      <if test="createBy != null">
+        CREATE_BY,
+      </if>
+      <if test="createDate != null">
+        CREATE_DATE,
+      </if>
+      <if test="lastUpdateBy != null">
+        LAST_UPDATE_BY,
+      </if>
+      <if test="lastUpdateDate != null">
+        LAST_UPDATE_DATE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=BIGINT},
+      </if>
+      <if test="testTaskName != null">
+        #{testTaskName,jdbcType=VARCHAR},
+      </if>
+      <if test="testTaskCode != null">
+        #{testTaskCode,jdbcType=VARCHAR},
+      </if>
+      <if test="testTaskOverview != null">
+        #{testTaskOverview,jdbcType=VARCHAR},
+      </if>
+      <if test="requirementFeatureId != null">
+        #{requirementFeatureId,jdbcType=BIGINT},
+      </if>
+      <if test="testTaskStatus != null">
+        #{testTaskStatus,jdbcType=TINYINT},
+      </if>
+      <if test="testUserId != null">
+        #{testUserId,jdbcType=BIGINT},
+      </if>
+      <if test="planStartDate != null">
+        #{planStartDate,jdbcType=DATE},
+      </if>
+      <if test="planEndDate != null">
+        #{planEndDate,jdbcType=DATE},
+      </if>
+      <if test="planWorkload != null">
+        #{planWorkload,jdbcType=DOUBLE},
+      </if>
+      <if test="actualStartDate != null">
+        #{actualStartDate,jdbcType=DATE},
+      </if>
+      <if test="actualEndDate != null">
+        #{actualEndDate,jdbcType=DATE},
+      </if>
+      <if test="actualWorkload != null">
+        #{actualWorkload,jdbcType=DOUBLE},
+      </if>
+      <if test="commissioningWindowId != null">
+        #{commissioningWindowId,jdbcType=BIGINT},
+      </if>
+      <if test="parentId != null">
+        #{parentId,jdbcType=BIGINT},
+      </if>
+      <if test="dependenceSystemIds != null">
+        #{dependenceSystemIds,jdbcType=VARCHAR},
+      </if>
+      <if test="dependenceSystemModuleIds != null">
+        #{dependenceSystemModuleIds,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null">
+        #{status,jdbcType=TINYINT},
+      </if>
+      <if test="createBy != null">
+        #{createBy,jdbcType=BIGINT},
+      </if>
+      <if test="createDate != null">
+        #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="lastUpdateBy != null">
+        #{lastUpdateBy,jdbcType=BIGINT},
+      </if>
+      <if test="lastUpdateDate != null">
+        #{lastUpdateDate,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="cn.pioneeruniverse.dev.entity.TblTestTask">
+    update tbl_test_task
+    <set>
+      <if test="testTaskName != null">
+        TEST_TASK_NAME = #{testTaskName,jdbcType=VARCHAR},
+      </if>
+      <if test="testTaskCode != null">
+        TEST_TASK_CODE = #{testTaskCode,jdbcType=VARCHAR},
+      </if>
+      <if test="testTaskOverview != null">
+        TEST_TASK_OVERVIEW = #{testTaskOverview,jdbcType=VARCHAR},
+      </if>
+      <if test="requirementFeatureId != null">
+        REQUIREMENT_FEATURE_ID = #{requirementFeatureId,jdbcType=BIGINT},
+      </if>
+      <if test="testTaskStatus != null">
+        TEST_TASK_STATUS = #{testTaskStatus,jdbcType=TINYINT},
+      </if>
+      <if test="testUserId != null">
+        TEST_USER_ID = #{testUserId,jdbcType=BIGINT},
+      </if>
+      <if test="planStartDate != null">
+        PLAN_START_DATE = #{planStartDate,jdbcType=DATE},
+      </if>
+      <if test="planEndDate != null">
+        PLAN_END_DATE = #{planEndDate,jdbcType=DATE},
+      </if>
+      <if test="planWorkload != null">
+        PLAN_WORKLOAD = #{planWorkload,jdbcType=DOUBLE},
+      </if>
+      <if test="actualStartDate != null">
+        ACTUAL_START_DATE = #{actualStartDate,jdbcType=DATE},
+      </if>
+      <if test="actualEndDate != null">
+        ACTUAL_END_DATE = #{actualEndDate,jdbcType=DATE},
+      </if>
+      <if test="actualWorkload != null">
+        ACTUAL_WORKLOAD = #{actualWorkload,jdbcType=DOUBLE},
+      </if>
+      <if test="commissioningWindowId != null">
+        COMMISSIONING_WINDOW_ID = #{commissioningWindowId,jdbcType=BIGINT},
+      </if>
+      <if test="parentId != null">
+        PARENT_ID = #{parentId,jdbcType=BIGINT},
+      </if>
+      <if test="dependenceSystemIds != null">
+        DEPENDENCE_SYSTEM_IDS = #{dependenceSystemIds,jdbcType=VARCHAR},
+      </if>
+      <if test="dependenceSystemModuleIds != null">
+        DEPENDENCE_SYSTEM_MODULE_IDS = #{dependenceSystemModuleIds,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null">
+        STATUS = #{status,jdbcType=TINYINT},
+      </if>
+      <if test="createBy != null">
+        CREATE_BY = #{createBy,jdbcType=BIGINT},
+      </if>
+      <if test="createDate != null">
+        CREATE_DATE = #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="lastUpdateBy != null">
+        LAST_UPDATE_BY = #{lastUpdateBy,jdbcType=BIGINT},
+      </if>
+      <if test="lastUpdateDate != null">
+        LAST_UPDATE_DATE = #{lastUpdateDate,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=BIGINT}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="cn.pioneeruniverse.dev.entity.TblTestTask">
+    update tbl_test_task
+    set TEST_TASK_NAME = #{testTaskName,jdbcType=VARCHAR},
+      TEST_TASK_CODE = #{testTaskCode,jdbcType=VARCHAR},
+      TEST_TASK_OVERVIEW = #{testTaskOverview,jdbcType=VARCHAR},
+      REQUIREMENT_FEATURE_ID = #{requirementFeatureId,jdbcType=BIGINT},
+      TEST_TASK_STATUS = #{testTaskStatus,jdbcType=TINYINT},
+      TEST_USER_ID = #{testUserId,jdbcType=BIGINT},
+      PLAN_START_DATE = #{planStartDate,jdbcType=DATE},
+      PLAN_END_DATE = #{planEndDate,jdbcType=DATE},
+      PLAN_WORKLOAD = #{planWorkload,jdbcType=DOUBLE},
+      ACTUAL_START_DATE = #{actualStartDate,jdbcType=DATE},
+      ACTUAL_END_DATE = #{actualEndDate,jdbcType=DATE},
+      ACTUAL_WORKLOAD = #{actualWorkload,jdbcType=DOUBLE},
+      COMMISSIONING_WINDOW_ID = #{commissioningWindowId,jdbcType=BIGINT},
+      PARENT_ID = #{parentId,jdbcType=BIGINT},
+      DEPENDENCE_SYSTEM_IDS = #{dependenceSystemIds,jdbcType=VARCHAR},
+      DEPENDENCE_SYSTEM_MODULE_IDS = #{dependenceSystemModuleIds,jdbcType=VARCHAR},
+      STATUS = #{status,jdbcType=TINYINT},
+      CREATE_BY = #{createBy,jdbcType=BIGINT},
+      CREATE_DATE = #{createDate,jdbcType=TIMESTAMP},
+      LAST_UPDATE_BY = #{lastUpdateBy,jdbcType=BIGINT},
+      LAST_UPDATE_DATE = #{lastUpdateDate,jdbcType=TIMESTAMP}
+    where ID = #{id,jdbcType=BIGINT}
+  </update>
+
+ 
+
+ <!--  查询列表信息 -->
+  <select id="getTestTask" parameterType="map" resultMap="BaseResultMap">
+      SELECT 
+        test.ID,
+        test.TEST_TASK_NAME,
+        test.TEST_STAGE,
+        test.TEST_TASK_CODE,
+        test.TEST_TASK_STATUS,
+        tsystem.SYSTEM_NAME,
+        tsystem.ID AS SYSTEM_ID,
+        tsystem.CODE_REVIEW_STATUS AS CODE_REVIEW_STATUS,
+        tsystem.SYSTEM_CODE,
+        testfeature.REQUIREMENT_ID,
+        requirement.PARENT_ID,
+        testfeature.ID AS "REQUIREMENT_feature_ID",
+        requirement.REQUIREMENT_CODE,
+        testfeature.FEATURE_code,
+        testfeature.FEATURE_NAME,
+        testfeature.REQUIREMENT_FEATURE_SOURCE,
+        userinfo.USER_NAME AS USER_NAME,
+        test.PLAN_START_DATE,
+        test.PLAN_END_DATE,
+        test.PLAN_WORKLOAD,
+        test.ACTUAL_START_DATE,
+		test.ACTUAL_END_DATE,
+		test.ACTUAL_WORKLOAD,
+        test.TEST_USER_ID,
+        CreatUser.USER_NAME AS CREATE_NAME,
+        test.CREATE_BY,
+        <!-- test.COMMISSIONING_WINDOW_ID, -->
+        window.ID AS COMMISSIONING_WINDOW_ID,
+        window.WINDOW_NAME AS WINDOW_NAME,
+        test.DESIGN_CASE_NUMBER,
+        test.EXECUTE_CASE_NUMBER,
+        test.TASK_ASSIGN_USER_ID,
+        userinfo2.USER_NAME AS taskAssignUserName,
+        count(defect.ID) defectNum
+      FROM
+      tbl_test_task test
+      LEFT JOIN tbl_requirement_feature testfeature ON test.REQUIREMENT_FEATURE_ID = testfeature.id
+      LEFT JOIN tbl_system_info tsystem 
+      ON testfeature.SYSTEM_ID = tsystem.ID AND (tsystem.STATUS=1 OR tsystem.STATUS is null)
+      LEFT JOIN tbl_requirement_info requirement 
+      ON testfeature.REQUIREMENT_ID = requirement.id
+      LEFT JOIN tbl_user_info userinfo 
+      ON test.TEST_USER_ID = userinfo.id  AND (userinfo.`STATUS` = 1 or userinfo.`STATUS` IS NULL)
+      LEFT JOIN tbl_project_system prosys ON prosys.SYSTEM_ID =tsystem.ID AND prosys.STATUS=1 AND prosys.RELATION_TYPE = 1
+      LEFT JOIN tbl_project_group pgroup
+       ON pgroup.PROJECT_ID = prosys.PROJECT_ID
+      LEFT JOIN tbl_user_info CreatUser 
+      ON test.CREATE_BY = CreatUser.id AND (CreatUser.`STATUS` = 1 or CreatUser.`STATUS` IS NULL)
+      LEFT JOIN tbl_commissioning_window window 
+      ON test.COMMISSIONING_WINDOW_ID = window.id  AND (window.`STATUS` = 1 or window.`STATUS` IS NULL)
+      LEFT JOIN tbl_user_info userinfo2 
+      ON test.TASK_ASSIGN_USER_ID = userinfo2.id AND (userinfo2.`STATUS` = 1 or userinfo2.`STATUS` IS NULL)
+      LEFT JOIN tbl_defect_info defect
+		ON defect.TEST_TASK_ID = test.ID AND defect.STATUS =
+		1 and defect.DEFECT_STATUS NOT IN (1,6)
+  	<where>
+            test.`STATUS` = 1
+            AND testfeature.`STATUS` = 1
+            AND (requirement.`STATUS` = 1 or requirement.`STATUS` IS NULL)
+            AND  (pgroup.id IN (
+				SELECT
+					guser2.PROJECT_GROUP_ID
+				FROM
+					tbl_project_group_user guser2
+				WHERE
+					guser2.USER_ID = #{test.id}   )
+			   OR  ( (test.CREATE_BY =#{test.id} )  	
+			   or (test.TEST_USER_ID = #{test.id}  )	)
+				 
+			)
+  		<if test="test.testTaskCode != null and test.testTaskCode != ''">
+				and test.TEST_TASK_CODE  LIKE CONCAT('%',#{test.testTaskCode},'%')
+		</if>
+		<if test="test.testTaskName != null and test.testTaskName != ''">
+				AND test.TEST_TASK_NAME LIKE CONCAT('%',#{test.testTaskName},'%')
+		</if>
+		<!-- 判断测试人员 请勿删除 ——刘珊  -->
+		 <!-- <if test="test.testUserId != null and test.testUserId != ''">
+               	AND test.TEST_USER_ID = #{test.testUserId} 
+          </if> -->
+       <!--  <if test="test.userName != null and test.userName != ''">
+			   AND	userinfo.USER_NAME  LIKE CONCAT('%',#{test.userName},'%')
+		</if>  -->
+		<if test="test.userName !=null and test.userName !=''">
+                and userinfo.ID in
+                <foreach collection="test.userName.split(',')" item="item" index="index" open="(" separator="," close=")">
+                	#{item}
+                </foreach>
+            </if>
+		<if test="test.workTaskStatus != null and test.workTaskStatus != ''">
+				AND test.TEST_TASK_STATUS in
+          <foreach item="item" index="index" collection="test.workTaskStatus.split(',')" open="(" separator="," close=")">
+                   #{item}
+          </foreach>
+		</if>
+		<if test="test.featureCode != null and test.featureCode != ''">
+			AND testfeature.FEATURE_code in
+			 <foreach collection="test.featureCode.split(',')" item="item" index="index" open="(" separator="," close=")">
+               	#{item}
+              </foreach>
+		</if>
+		
+		<if test="test.requirementCode != null and test.requirementCode != ''">
+                AND requirement.REQUIREMENT_CODE in
+                <foreach collection="test.requirementCode.split(',')" item="item" index="index" open="(" separator="," close=")">
+                	#{item}
+                </foreach>
+            </if>
+		<if test="test.systemName !=null and test.systemName !=''">
+                and tsystem.SYSTEM_NAME in
+                <foreach collection="test.systemName.split(',')" item="item" index="index" open="(" separator="," close=")">
+                	#{item}
+                </foreach>
+       	 </if>
+       	 <if test="test.commissioningWindowIds !=null and test.commissioningWindowIds !=''">
+                and test.COMMISSIONING_WINDOW_ID  in
+			<foreach collection="test.commissioningWindowIds.split(',')" index="index" item="item" open="(" separator="," close=")">
+               	#{item}
+             </foreach>
+       	 </if>
+       	 <if test="test.taskAssignUserId != null and test.taskAssignUserId != ''">
+				AND test.TASK_ASSIGN_USER_ID = #{test.taskAssignUserId}
+		</if>
+          <if test="filterMap !=null">
+            <if test="filterMap.systemName !=null and filterMap.systemName !=''">
+                    and tsystem.SYSTEM_NAME LIKE CONCAT('%',#{filterMap.systemName},'%')
+            </if>
+            <if test="filterMap.testTaskName !=null and filterMap.testTaskName!=''">
+                   AND test.TEST_TASK_NAME LIKE CONCAT('%',#{filterMap.testTaskName},'%')
+            </if>
+            <if test="filterMap.testTaskCode != null and filterMap.testTaskCode != ''">
+                    and test.TEST_TASK_CODE  LIKE CONCAT('%',#{filterMap.testTaskCode},'%')
+            </if>
+            <if test="filterMap.requirementCode != null and filterMap.requirementCode != ''">
+                     AND requirement.REQUIREMENT_CODE   LIKE CONCAT('%',#{filterMap.requirementCode},'%')
+            </if>
+            <if test="filterMap.featureCode != null and filterMap.featureCode != ''">
+                    AND testfeature.FEATURE_code  LIKE CONCAT('%',#{filterMap.featureCode},'%')
+            </if>
+            <if test="filterMap.userName != null and filterMap.userName != ''">
+                    AND userinfo.USER_NAME  LIKE CONCAT('%',#{filterMap.userName},'%')
+            </if>
+            <if test="filterMap.testTaskStatus != null and filterMap.testTaskStatus != ''">
+                    AND test.TEST_TASK_STATUS  LIKE CONCAT('%',#{filterMap.testTaskStatus},'%')
+            </if>
+            <if test="filterMap.windowName != null and filterMap.windowName != ''">
+                    AND window.WINDOW_NAME LIKE CONCAT('%',#{filterMap.windowName},'%')
+            </if>
+            <if test="filterMap.testStage != null and filterMap.testStage != ''">
+                    AND test.TEST_STAGE = #{filterMap.testStage}
+            </if>
+          </if>
+  	</where>
+  	GROUP BY test.ID
+  	<!-- order by test.id desc -->
+  	
+  		<include refid="sort_List"></include>
+    <!-- 判断分页请不要删除，为了做bootstrap弹框，不需要jqgrid列表不要传分页参数——刘珊  -->
+    <if test="_parameter.containsKey('start') and _parameter.containsKey('pageSize') ">
+      <if test="start != null and pageSize != null">
+        LIMIT #{start},#{pageSize}
+      </if>
+    </if>
+  </select>
+
+  <select id="getTestTaskAll" parameterType="map" resultMap="BaseResultMap">
+ 	 select 
+        test.ID,
+        test.TEST_TASK_NAME,
+        test.TEST_TASK_CODE,
+        test.TEST_TASK_STATUS,
+        test.TEST_STAGE,
+        tsystem.SYSTEM_NAME,
+        tsystem.ID AS SYSTEM_ID,
+        tsystem.CODE_REVIEW_STATUS AS CODE_REVIEW_STATUS,
+        tsystem.SYSTEM_CODE,
+        testfeature.REQUIREMENT_ID,
+        requirement.PARENT_ID,
+        testfeature.ID AS "REQUIREMENT_feature_ID",
+        requirement.REQUIREMENT_CODE,
+        testfeature.FEATURE_code,
+        testfeature.FEATURE_NAME,
+        testfeature.REQUIREMENT_FEATURE_SOURCE,
+        userinfo.USER_NAME AS USER_NAME,
+        test.PLAN_START_DATE,
+        test.PLAN_END_DATE,
+        test.PLAN_WORKLOAD,
+        test.ACTUAL_START_DATE,
+		test.ACTUAL_END_DATE,
+		test.ACTUAL_WORKLOAD,
+        test.TEST_USER_ID,
+        CreatUser.USER_NAME AS CREATE_NAME,
+        test.CREATE_BY,
+       <!--  test.COMMISSIONING_WINDOW_ID, -->
+        window.ID AS COMMISSIONING_WINDOW_ID,
+        window.WINDOW_NAME AS WINDOW_NAME,
+        test.DESIGN_CASE_NUMBER,
+        test.EXECUTE_CASE_NUMBER,
+        test.TASK_ASSIGN_USER_ID,
+        userinfo2.USER_NAME AS taskAssignUserName,
+        count(defect.ID) defectNum
+      FROM
+      tbl_test_task test
+      LEFT JOIN tbl_requirement_feature testfeature 
+      ON test.REQUIREMENT_FEATURE_ID = testfeature.id
+      LEFT JOIN tbl_system_info tsystem 
+      ON testfeature.SYSTEM_ID = tsystem.ID AND (tsystem.STATUS=1 OR tsystem.STATUS is null)
+      LEFT JOIN tbl_requirement_info requirement 
+      ON testfeature.REQUIREMENT_ID = requirement.id
+      LEFT JOIN tbl_user_info userinfo 
+      ON test.TEST_USER_ID = userinfo.id AND (userinfo.`STATUS` = 1 or userinfo.`STATUS` IS NULL)
+      LEFT JOIN tbl_user_info CreatUser 
+      ON test.CREATE_BY = CreatUser.id  AND (CreatUser.`STATUS` = 1 or CreatUser.`STATUS` IS NULL)
+      LEFT JOIN tbl_commissioning_window window 
+      ON test.COMMISSIONING_WINDOW_ID = window.id  AND (window.`STATUS` = 1 or window.`STATUS` IS NULL)
+      LEFT JOIN tbl_user_info userinfo2 
+      ON test.TASK_ASSIGN_USER_ID = userinfo2.id AND (userinfo2.`STATUS` = 1 or userinfo2.`STATUS` IS NULL)
+      LEFT JOIN tbl_defect_info defect
+		ON defect.TEST_TASK_ID = test.ID AND defect.STATUS =
+		1 and defect.DEFECT_STATUS NOT IN (1,6)
+  	<where>
+          test.STATUS=1 
+          AND testfeature.STATUS=1 
+          AND (requirement.`STATUS` = 1 or requirement.`STATUS` IS NULL)
+  		<if test="test.testTaskCode != null and test.testTaskCode != ''">
+				and test.TEST_TASK_CODE  LIKE CONCAT('%',#{test.testTaskCode},'%')
+		</if>
+		<if test="test.testTaskName != null and test.testTaskName != ''">
+				AND test.TEST_TASK_NAME LIKE CONCAT('%',#{test.testTaskName},'%')
+		</if>
+       <if test="test.userName !=null and test.userName !=''">
+                and userinfo.ID in
+                <foreach collection="test.userName.split(',')" item="item" index="index" open="(" separator="," close=")">
+                	#{item}
+                </foreach>
+            </if>
+		<if test="test.workTaskStatus != null and test.workTaskStatus != ''">
+				AND test.TEST_TASK_STATUS in
+          <foreach item="item" index="index" collection="test.workTaskStatus.split(',')" open="(" separator="," close=")">
+                   #{item}
+          </foreach>
+		</if>
+		<if test="test.featureCode != null and test.featureCode != ''">
+			AND testfeature.FEATURE_code in
+			 <foreach collection="test.featureCode.split(',')" item="item" index="index" open="(" separator="," close=")">
+               	#{item}
+              </foreach>
+		</if>
+			<if test="test.requirementCode != null and test.requirementCode != ''">
+                AND requirement.REQUIREMENT_CODE in
+                <foreach collection="test.requirementCode.split(',')" item="item" index="index" open="(" separator="," close=")">
+                	#{item}
+                </foreach>
+            </if>
+		<if test="test.systemName !=null and test.systemName !=''">
+                and tsystem.SYSTEM_NAME in
+                <foreach collection="test.systemName.split(',')" item="item" index="index" open="(" separator="," close=")">
+                	#{item}
+                </foreach>
+       	 </if>
+		<if test="test.commissioningWindowIds !=null and test.commissioningWindowIds !=''">
+                and test.COMMISSIONING_WINDOW_ID  in
+			<foreach collection="test.commissioningWindowIds.split(',')" index="index" item="item" open="(" separator="," close=")">
+               	#{item}
+             </foreach>
+       	 </if>
+       	 <if test="test.taskAssignUserId != null and test.taskAssignUserId != ''">
+				AND test.TASK_ASSIGN_USER_ID = #{test.taskAssignUserId}
+		</if>
+         <if test="filterMap !=null">
+            <if test="filterMap.systemName !=null and filterMap.systemName !=''">
+              and tsystem.SYSTEM_NAME LIKE CONCAT('%',#{filterMap.systemName},'%')
+            </if>
+            <if test="filterMap.testTaskName !=null and filterMap.testTaskName!=''">
+                 AND test.TEST_TASK_NAME LIKE CONCAT('%',#{filterMap.testTaskName},'%')
+            </if>
+            <if test="filterMap.testTaskCode != null and filterMap.testTaskCode != ''">
+                    and test.TEST_TASK_CODE  LIKE CONCAT('%',#{filterMap.testTaskCode},'%')
+            </if>
+            <if test="filterMap.requirementCode != null and filterMap.requirementCode != ''">
+                   AND requirement.REQUIREMENT_CODE   LIKE CONCAT('%',#{filterMap.requirementCode},'%')
+            </if>
+            <if test="filterMap.featureCode != null and filterMap.featureCode != ''">
+                    AND testfeature.FEATURE_code  LIKE CONCAT('%',#{filterMap.featureCode},'%')
+            </if>
+            <if test="filterMap.userName != null and filterMap.userName != ''">
+                    AND userinfo.USER_NAME  LIKE CONCAT('%',#{filterMap.userName},'%')
+            </if>
+            <if test="filterMap.testTaskStatus != null and filterMap.testTaskStatus != ''">
+                    AND test.TEST_TASK_STATUS  LIKE CONCAT('%',#{filterMap.testTaskStatus},'%')
+            </if>
+            <if test="filterMap.windowName != null and filterMap.windowName != ''">
+                    AND window.WINDOW_NAME LIKE CONCAT('%',#{filterMap.windowName},'%')
+            </if>
+            <if test="filterMap.testStage != null and filterMap.testStage != ''">
+                    AND test.TEST_STAGE = #{filterMap.testStage}
+            </if>
+            <if test="filterMap.taskAssignUserName != null and filterMap.taskAssignUserName != ''">
+    <!--  AND userinfo2.USER_NAME = #{filterMap.taskAssignUserName}-->
+                    AND userinfo2.USER_NAME  LIKE CONCAT('%',#{filterMap.taskAssignUserName},'%')
+             </if>
+</if>
+
+</where>
+group by test.ID
+<!-- order by test.id desc -->
+  		<include refid="sort_List"></include>
+     <!-- 判断分页请不要删除，为了做bootstrap弹框，不需要jqgrid列表不要传分页参数——刘珊 --> 
+    <if test="_parameter.containsKey('start') and _parameter.containsKey('pageSize') ">
+      <if test="start != null and pageSize != null">
+        LIMIT #{start},#{pageSize}
+      </if>
+    </if>
+  </select>
+  
+  <sql id="sort_List">
+  		<if test="test.sidx != '' and test.sord != '' and test.sidx == 'id' and test.sord == 'desc'">
+        	order by test.ID desc
+        </if>
+        <if test="test.sidx != '' and test.sord != '' and test.sidx == 'id' and test.sord == 'asc'">
+        	order by test.ID asc
+        </if>
+  		<if test="test.sidx != '' and test.sord != '' and test.sidx == 'testTaskCode' and test.sord == 'desc'">
+        	order by test.TEST_TASK_CODE desc
+        </if>
+        <if test="test.sidx != '' and test.sord != '' and test.sidx == 'testTaskCode' and test.sord == 'asc'">
+        	order by test.TEST_TASK_CODE asc
+        </if>
+  		<if test="test.sidx != '' and test.sord != '' and test.sidx == 'testTaskName' and test.sord == 'desc'">
+        	order by test.TEST_TASK_NAME desc
+        </if>
+        <if test="test.sidx != '' and test.sord != '' and test.sidx == 'testTaskName' and test.sord == 'asc'">
+        	order by test.TEST_TASK_NAME asc
+        </if>
+  		<if test="test.sidx != '' and test.sord != '' and test.sidx == 'testTaskStatus' and test.sord == 'desc'">
+        	order by test.TEST_TASK_STATUS desc
+        </if>
+        <if test="test.sidx != '' and test.sord != '' and test.sidx == 'testTaskStatus' and test.sord == 'asc'">
+        	order by test.TEST_TASK_STATUS asc
+        </if>
+  		<if test="test.sidx != '' and test.sord != '' and test.sidx == 'systemName' and test.sord == 'desc'">
+        	order by tsystem.SYSTEM_NAME desc
+        </if>
+        <if test="test.sidx != '' and test.sord != '' and test.sidx == 'systemName' and test.sord == 'asc'">
+        	order by tsystem.SYSTEM_NAME asc
+        </if>
+  		<if test="test.sidx != '' and test.sord != '' and test.sidx == 'requirementCode' and test.sord == 'desc'">
+        	order by requirement.REQUIREMENT_CODE desc
+        </if>
+        <if test="test.sidx != '' and test.sord != '' and test.sidx == 'requirementCode' and test.sord == 'asc'">
+        	order by requirement.REQUIREMENT_CODE asc
+        </if>
+  		<if test="test.sidx != '' and test.sord != '' and test.sidx == 'featureCode' and test.sord == 'desc'">
+        	order by testfeature.FEATURE_CODE desc
+        </if>
+        <if test="test.sidx != '' and test.sord != '' and test.sidx == 'featureCode' and test.sord == 'asc'">
+        	order by testfeature.FEATURE_CODE asc
+        </if>
+  		<if test="test.sidx != '' and test.sord != '' and test.sidx == 'userName' and test.sord == 'desc'">
+        	order by userinfo.USER_NAME desc
+        </if>
+        <if test="test.sidx != '' and test.sord != '' and test.sidx == 'userName' and test.sord == 'asc'">
+        	order by userinfo.USER_NAME asc
+        </if>
+  		<if test="test.sidx != '' and test.sord != '' and test.sidx == 'windowName' and test.sord == 'desc'">
+        	order by window.WINDOW_NAME desc
+        </if>
+        <if test="test.sidx != '' and test.sord != '' and test.sidx == 'windowName' and test.sord == 'asc'">
+        	order by window.WINDOW_NAME asc
+        </if>
+  		<if test="test.sidx != '' and test.sord != '' and test.sidx == 'taskAssignUserName' and test.sord == 'desc'">
+        	order by userinfo2.USER_NAME desc
+        </if>
+        <if test="test.sidx != '' and test.sord != '' and test.sidx == 'taskAssignUserName' and test.sord == 'asc'">
+        	order by userinfo2.USER_NAME asc
+        </if>
+  </sql>
+
+  <!-- 根据当前人 不包括系统管理员 弹框数据总数，刘珊-->
+  <select id="getAllTestTaskTotal" parameterType="hashmap" resultType="java.lang.Integer">
+      SELECT
+           COUNT(test.TEST_TASK_CODE)
+      FROM
+      (
+          SELECT DISTINCT
+        test.ID,
+        test.TEST_TASK_NAME,
+        test.TEST_STAGE,
+        test.TEST_TASK_CODE,
+        test.TEST_TASK_STATUS,
+        tsystem.SYSTEM_NAME,
+        tsystem.ID AS SYSTEM_ID,
+        tsystem.CODE_REVIEW_STATUS AS CODE_REVIEW_STATUS,
+        tsystem.SYSTEM_CODE,
+        testfeature.REQUIREMENT_ID,
+        requirement.PARENT_ID,
+        testfeature.ID AS "REQUIREMENT_feature_ID",
+        requirement.REQUIREMENT_CODE,
+        testfeature.FEATURE_code,
+        testfeature.FEATURE_NAME,
+        testfeature.REQUIREMENT_FEATURE_SOURCE,
+        userinfo.USER_NAME AS USER_NAME,
+        test.PLAN_START_DATE,
+        test.PLAN_END_DATE,
+        test.PLAN_WORKLOAD,
+        test.ACTUAL_START_DATE,
+		test.ACTUAL_END_DATE,
+		test.ACTUAL_WORKLOAD,
+        test.TEST_USER_ID,
+        CreatUser.USER_NAME AS CREATE_NAME,
+        test.CREATE_BY,
+        test.COMMISSIONING_WINDOW_ID
+      FROM
+      tbl_test_task test
+      LEFT JOIN tbl_requirement_feature testfeature ON test.REQUIREMENT_FEATURE_ID = testfeature.id
+      LEFT JOIN tbl_system_info tsystem 
+      ON testfeature.SYSTEM_ID = tsystem.ID AND (tsystem.STATUS=1 OR tsystem.STATUS is null)
+      LEFT JOIN tbl_requirement_info requirement 
+      ON testfeature.REQUIREMENT_ID = requirement.id
+      LEFT JOIN tbl_user_info userinfo 
+      ON test.TEST_USER_ID = userinfo.id  AND (userinfo.`STATUS` = 1 or userinfo.`STATUS` IS NULL)
+      LEFT JOIN tbl_project_system prosys ON prosys.SYSTEM_ID =tsystem.ID AND prosys.STATUS=1 AND prosys.RELATION_TYPE = 1
+      LEFT JOIN tbl_project_group pgroup
+       ON pgroup.PROJECT_ID = prosys.PROJECT_ID
+      LEFT JOIN tbl_user_info CreatUser 
+      ON test.CREATE_BY = CreatUser.id AND (CreatUser.`STATUS` = 1 or CreatUser.`STATUS` IS NULL)
+      LEFT JOIN tbl_commissioning_window window 
+      ON test.COMMISSIONING_WINDOW_ID = window.id  AND (window.`STATUS` = 1 or window.`STATUS` IS NULL)
+  	<where>
+            test.`STATUS` = 1
+            AND testfeature.`STATUS` = 1
+            AND (requirement.`STATUS` = 1 or requirement.`STATUS` IS NULL)
+            AND  (pgroup.id IN (
+				SELECT
+					guser2.PROJECT_GROUP_ID
+				FROM
+					tbl_project_group_user guser2
+				WHERE
+					guser2.USER_ID = #{test.id}   )
+			   OR  ( (test.CREATE_BY =#{test.id} )  	
+			   or (test.TEST_USER_ID = #{test.id}  )	)
+				 
+			)
+      <if test="test.testTaskCode != null and test.testTaskCode != ''">
+        and test.TEST_TASK_CODE  LIKE CONCAT('%',#{test.testTaskCode},'%')
+      </if>
+      <if test="test.testTaskName != null and test.testTaskName != ''">
+        AND test.TEST_TASK_NAME LIKE CONCAT('%',#{test.testTaskName},'%')
+      </if>
+      <if test="test.userName !=null and test.userName !=''">
+        and userinfo.ID in
+        <foreach collection="test.userName.split(',')" item="item" index="index" open="(" separator="," close=")">
+          #{item}
+        </foreach>
+      </if>
+      <if test="test.workTaskStatus != null and test.workTaskStatus != ''">
+				AND test.TEST_TASK_STATUS in
+          <foreach item="item" index="index" collection="test.workTaskStatus.split(',')" open="(" separator="," close=")">
+                   #{item}
+          </foreach>
+		</if>
+      <if test="test.featureCode != null and test.featureCode != ''">
+        AND testfeature.FEATURE_code LIKE CONCAT('%',#{test.featureCode},'%')
+      </if>
+      <if test="test.requirementCode != null and test.requirementCode != ''">
+        AND requirement.REQUIREMENT_CODE LIKE CONCAT('%',#{test.requirementCode},'%')
+      </if>
+      <if test="test.systemName !=null and test.systemName !=''">
+        and tsystem.SYSTEM_NAME in
+        <foreach collection="test.systemName.split(',')" item="item" index="index" open="(" separator="," close=")">
+          #{item}
+        </foreach>
+      </if>
+    </where>
+      ) test
+  </select>
+
+  <!--系统管理员 分页 刘珊-->
+  <select id="getTestTaskAllTotal" parameterType="map" resultType="java.lang.Integer">
+    SELECT
+      COUNT(test.TEST_TASK_NAME)
+    FROM
+    (
+        select  DISTINCT
+        test.ID,
+        test.TEST_TASK_NAME,
+        test.TEST_TASK_CODE,
+        test.TEST_TASK_STATUS,
+        test.TEST_STAGE,
+        tsystem.SYSTEM_NAME,
+        tsystem.ID AS SYSTEM_ID,
+        tsystem.CODE_REVIEW_STATUS AS CODE_REVIEW_STATUS,
+        tsystem.SYSTEM_CODE,
+        testfeature.REQUIREMENT_ID,
+        requirement.PARENT_ID,
+        testfeature.ID AS "REQUIREMENT_feature_ID",
+        requirement.REQUIREMENT_CODE,
+        testfeature.FEATURE_code,
+        testfeature.FEATURE_NAME,
+        testfeature.REQUIREMENT_FEATURE_SOURCE,
+        userinfo.USER_NAME AS USER_NAME,
+        test.PLAN_START_DATE,
+        test.PLAN_END_DATE,
+        test.PLAN_WORKLOAD,
+        test.ACTUAL_START_DATE,
+		test.ACTUAL_END_DATE,
+		test.ACTUAL_WORKLOAD,
+        test.TEST_USER_ID,
+        CreatUser.USER_NAME AS CREATE_NAME,
+        test.CREATE_BY,
+        test.COMMISSIONING_WINDOW_ID,
+        window.WINDOW_NAME
+      FROM
+      tbl_test_task test
+      LEFT JOIN tbl_requirement_feature testfeature ON test.REQUIREMENT_FEATURE_ID = testfeature.id
+      LEFT JOIN tbl_system_info tsystem 
+      ON testfeature.SYSTEM_ID = tsystem.ID and (tsystem.STATUS=1 OR tsystem.STATUS is null)
+      LEFT JOIN tbl_requirement_info requirement ON testfeature.REQUIREMENT_ID = requirement.id
+      LEFT JOIN tbl_user_info userinfo 
+      ON test.TEST_USER_ID = userinfo.id AND (userinfo.`STATUS` = 1 or userinfo.`STATUS` IS NULL)
+      LEFT JOIN tbl_user_info CreatUser 
+      ON test.CREATE_BY = CreatUser.id  AND (CreatUser.`STATUS` = 1 or CreatUser.`STATUS` IS NULL)
+      LEFT JOIN tbl_commissioning_window window 
+      ON test.COMMISSIONING_WINDOW_ID = window.id  AND (window.`STATUS` = 1 or window.`STATUS` IS NULL)
+  	<where>
+          test.STATUS=1 
+          AND testfeature.STATUS=1 
+          AND (requirement.`STATUS` = 1 or requirement.`STATUS` IS NULL)
+        <if test="test.testTaskCode != null and test.testTaskCode != ''">
+          and test.TEST_TASK_CODE  LIKE CONCAT('%',#{test.testTaskCode},'%')
+        </if>
+        <if test="test.testTaskName != null and test.testTaskName != ''">
+          AND test.TEST_TASK_NAME LIKE CONCAT('%',#{test.testTaskName},'%')
+        </if>
+        <if test="test.userName !=null and test.userName !=''">
+          and userinfo.ID in
+          <foreach collection="test.userName.split(',')" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+          </foreach>
+        </if>
+        <if test="test.workTaskStatus != null and test.workTaskStatus != ''">
+				AND test.TEST_TASK_STATUS in
+          <foreach item="item" index="index" collection="test.workTaskStatus.split(',')" open="(" separator="," close=")">
+                   #{item}
+          </foreach>
+		</if>
+        <if test="test.featureCode != null and test.featureCode != ''">
+          AND testfeature.FEATURE_code LIKE CONCAT('%',#{test.featureCode},'%')
+        </if>
+        <if test="test.requirementCode != null and test.requirementCode != ''">
+          AND requirement.REQUIREMENT_CODE LIKE CONCAT('%',#{test.requirementCode},'%')
+        </if>
+        <if test="test.systemName !=null and test.systemName !=''">
+          and tsystem.SYSTEM_NAME in
+          <foreach collection="test.systemName.split(',')" item="item" index="index" open="(" separator="," close=")">
+            #{item}
+          </foreach>
+        </if>
+
+    </where>
+    )test
+  </select>
+
+  <!-- 测试集工作任务弹窗 -->
+  <select id="selectTestTaskByCon" parameterType="cn.pioneeruniverse.dev.entity.TblTestTask" resultMap="BaseResultMap" resultType="list">
+  	SELECT task.ID,task.TEST_TASK_NAME,task.TEST_TASK_CODE,task.TEST_TASK_STATUS,task.REQUIREMENT_FEATURE_ID FROM tbl_test_task task
+	LEFT JOIN tbl_requirement_feature feature ON feature.ID = task.REQUIREMENT_FEATURE_ID
+	WHERE task.`STATUS` = 1 AND feature.REQUIREMENT_FEATURE_STATUS = 2
+		  <if test="testTaskCode != null">
+              AND task.TEST_TASK_CODE  LIKE CONCAT('%',#{testTaskCode},'%')
+          </if>
+          <if test="testTaskName != null">
+              AND task.TEST_TASK_NAME LIKE CONCAT('%',#{testTaskName},'%')
+          </if>
+          <if test="testTaskStatus != null">
+              AND task.TEST_TASK_STATUS = #{testTaskStatus}
+          </if>
+  </select>
+
+
+  <select id="getAllTestUser" parameterType="cn.pioneeruniverse.dev.entity.TblTestTask" resultMap="BaseResultMap">
+ SELECT USER_NAME ,id as TEST_USER_ID from  tbl_user_info tuser where tuser.STATUS=1
+<!-- where tuser.ID in
+(SELECT guser2.USER_ID FROM tbl_project_group_user guser2 WHERE guser2.PROJECT_GROUP_ID=
+ (SELECT guser.PROJECT_GROUP_ID from tbl_project_group_user guser where  guser.USER_ID=#{testUserId})) -->
+  </select>
+  
+  
+  <select id="getAllFeature" parameterType="map" resultType="map">
+ SELECT DISTINCT f.id,f.FEATURE_CODE,f.FEATURE_NAME,f.COMMISSIONING_WINDOW_ID,f.REQUIREMENT_FEATURE_STATUS from  tbl_requirement_feature f
+		
+		<where>
+		  f.STATUS=01 
+		<if test=" TblTestTask.featureCode!= null and TblTestTask.featureCode != ''">
+				AND f.FEATURE_CODE  LIKE CONCAT('%',#{TblTestTask.featureCode},'%')
+		</if>
+		<if test=" TblTestTask.featureName!= null and TblTestTask.featureName!= ''">
+				AND f.FEATURE_NAME  LIKE CONCAT('%',#{TblTestTask.featureName},'%')
+		</if>
+		
+		<if test="TblTestTask.featureStatusList != null and (TblTestTask.featureStatusList).size()>0" >
+		AND f.REQUIREMENT_FEATURE_STATUS in
+		<foreach item="item" index="index" collection="TblTestTask.featureStatusList" open="(" separator="," close=")">
+				#{item}
+			 </foreach> 
+		</if>
+		</where>
+		<if test="start != null and pageSize != null">
+			limit #{start},#{pageSize}
+		</if>
+		
+  </select>
+  
+    <update id="editFeature" parameterType="java.lang.Long">
+    update tbl_requirement_feature
+    set REQUIREMENT_FEATURE_STATUS ="02"
+    where ID =#{id}
+  </update>
+  
+   <insert id="addTestTask" parameterType="cn.pioneeruniverse.dev.entity.TblTestTask" >
+    <selectKey resultType="java.lang.Long" order="AFTER" keyProperty="id">
+      SELECT LAST_INSERT_ID() AS ID
+    </selectKey>
+  insert into tbl_test_task
+   (TEST_TASK_STATUS,TEST_TASK_CODE,TEST_TASK_NAME,REQUIREMENT_FEATURE_ID,TEST_TASK_OVERVIEW,PLAN_START_DATE,PLAN_END_DATE,PLAN_WORKLOAD,TEST_USER_ID,COMMISSIONING_WINDOW_ID,CREATE_BY,CREATE_DATE,TEST_STAGE,TASK_ASSIGN_USER_ID) 
+  values(1,#{testTaskCode},#{testTaskName},#{requirementFeatureId},#{testTaskOverview},#{planStartDate},#{planEndDate},#{planWorkload},#{testUserId},#{commissioningWindowId},#{createBy},#{createDate},#{testStage},#{taskAssignUserId})
+  </insert>
+  
+   <select id="getEditTestTask" parameterType="cn.pioneeruniverse.dev.entity.TblTestTask" resultMap="BaseResultMap">
+       SELECT
+           t.TEST_STAGE,
+           t.id,
+           t.TEST_TASK_STATUS,
+           t.ACTUAL_WORKLOAD,
+           t.ACTUAL_START_DATE,
+           t.ACTUAL_END_DATE,
+           t.REQUIREMENT_FEATURE_ID,
+           t.TEST_TASK_NAME,
+           t.TEST_TASK_OVERVIEW,
+           t.PLAN_START_DATE,
+           t.PLAN_END_DATE,
+           t.CREATE_BY,
+           f.FEATURE_NAME,
+           PLAN_WORKLOAD,
+           u.USER_NAME,
+           u.id AS TEST_USER_ID,
+           t.COMMISSIONING_WINDOW_ID,
+           f.REQUIREMENT_FEATURE_STATUS,
+           t.DESIGN_CASE_NUMBER,
+           t.EXECUTE_CASE_NUMBER,
+           t.TASK_ASSIGN_USER_ID,
+           u2.USER_NAME AS taskAssignUserName
+       FROM
+        tbl_test_task t
+       LEFT JOIN tbl_requirement_feature f ON t.REQUIREMENT_FEATURE_ID = f.id
+       LEFT JOIN tbl_user_info u ON t.TEST_USER_ID = u.ID
+       LEFT JOIN tbl_user_info u2 ON t.TASK_ASSIGN_USER_ID = u2.ID
+      <where>
+        t.ID=#{id}
+      </where>
+  </select>
+    <select id="getTestOld" parameterType="cn.pioneeruniverse.dev.entity.TblTestTask" resultMap="BaseResultMap">
+		select t.TEST_STAGE,t.TEST_USER_ID,t.id,t.TEST_TASK_STATUS,t.ACTUAL_WORKLOAD,t.ACTUAL_START_DATE,t.ACTUAL_END_DATE,t.REQUIREMENT_FEATURE_ID,t.TEST_TASK_NAME,t.TEST_TASK_OVERVIEW,t.PLAN_START_DATE,t.PLAN_END_DATE,f.FEATURE_NAME,PLAN_WORKLOAD,u.USER_NAME,u.id,t.COMMISSIONING_WINDOW_ID,f.REQUIREMENT_FEATURE_STATUS,
+		t.DESIGN_CASE_NUMBER, t.EXECUTE_CASE_NUMBER
+		 from tbl_test_task t
+		LEFT JOIN tbl_requirement_feature f
+		on t.REQUIREMENT_FEATURE_ID=f.id 
+		LEFT JOIN tbl_user_info u
+		on t.TEST_USER_ID=u.ID
+  <where>
+  t.ID=#{id}
+  </where>
+  </select>
+   <update id="updateTestTask" parameterType="cn.pioneeruniverse.dev.entity.TblTestTask" >
+    update TBL_TEST_TASK
+    <set>
+      <if test=" testTaskName!= null and  testTaskName!= ''">
+        TEST_TASK_NAME = #{testTaskName},
+      </if>
+      <if test=" requirementFeatureId!= null ">
+        REQUIREMENT_FEATURE_ID = #{requirementFeatureId},
+      </if>
+      <if test=" testTaskOverview!= null and  testTaskOverview!= ''">
+		TEST_TASK_OVERVIEW =#{testTaskOverview},
+	</if>
+	 <!-- <if test="planStartDate!= null">
+		PLAN_START_DATE =#{planStartDate},
+	</if>
+	<if test="planEndDate!= null ">
+		PLAN_END_DATE =#{planEndDate},
+	</if>
+	<if test="planWorkload != null" >
+		PLAN_WORKLOAD =#{planWorkload},
+	</if> -->
+	<if test="testUserId!= null ">
+		TEST_USER_ID =#{testUserId},
+	</if>
+	<if test="lastUpdateBy!= null">
+		LAST_UPDATE_BY =#{lastUpdateBy},
+	</if>
+	<if test="lastUpdateDate!= null ">
+		LAST_UPDATE_DATE =#{lastUpdateDate},
+	</if>
+		COMMISSIONING_WINDOW_ID =#{commissioningWindowId},
+	<if test="testTaskStatus !=null ">
+                TEST_TASK_STATUS =#{testTaskStatus},
+    </if>
+	<if test="testStage!=null ">
+		TEST_STAGE =#{testStage},
+	</if>
+		ACTUAL_START_DATE = #{actualStartDate}, ACTUAL_END_DATE = #{actualEndDate}, ACTUAL_WORKLOAD = #{actualWorkload},
+		DESIGN_CASE_NUMBER = #{designCaseNumber}, EXECUTE_CASE_NUMBER = #{executeCaseNumber},TASK_ASSIGN_USER_ID = #{taskAssignUserId}
+    </set>
+    where ID =#{id}
+  </update> 
+   <update id="assigTest" parameterType="cn.pioneeruniverse.dev.entity.TblTestTask">
+    update TBL_TEST_TASK
+   <set>
+    TEST_USER_ID = #{testUserId}
+   </set>
+    where ID =#{id}
+  </update>
+  
+  <!-- 待处理 -->
+  <update id="DHandle" parameterType="cn.pioneeruniverse.dev.entity.TblTestTask">
+    update TBL_TEST_TASK
+    <set>
+      <if test="actualStartDate!= null">
+        ACTUAL_START_DATE = #{actualStartDate},
+      </if>
+	TEST_TASK_STATUS=2,
+	LAST_UPDATE_BY=#{lastUpdateBy},
+	LAST_UPDATE_DATE=CURRENT_TIMESTAMP
+    </set>
+    where ID =#{id}
+  </update> 
+   <!--  处理 -->
+  <update id="Handle" parameterType="cn.pioneeruniverse.dev.entity.TblTestTask">
+    update TBL_TEST_TASK
+    <set>
+      <if test="actualStartDate!= null">
+        ACTUAL_START_DATE = #{actualStartDate},
+      </if>
+      <if test="actualEndDate!= null">
+        ACTUAL_END_DATE = #{actualEndDate},
+      </if>
+      <if test="actualWorkload!= null and actualWorkload!=''">
+		ACTUAL_WORKLOAD =#{actualWorkload},
+	</if>
+	LAST_UPDATE_BY=#{lastUpdateBy},
+	LAST_UPDATE_DATE=CURRENT_TIMESTAMP,
+	TEST_TASK_STATUS=4
+    </set>
+    where ID =#{id}
+  </update> 
+  
+   <update id="examineHandle" parameterType="cn.pioneeruniverse.dev.entity.TblTestTask">
+    update TBL_TEST_TASK
+    <set>
+	TEST_TASK_STATUS=3,
+	LAST_UPDATE_BY=#{lastUpdateBy},
+	LAST_UPDATE_DATE=CURRENT_TIMESTAMP
+    </set>
+    where ID =#{id}
+  </update> 
+  
+  
+   	 <!-- 最大code -->
+     <select id="DevfindMaxCode" parameterType="int" resultType="String">
+    	SELECT MAX(SUBSTRING(TEST_TASK_CODE,#{length}))
+		FROM tbl_test_task
+    </select>
+
+
+    <!--根据主键查询测试工作任务名称-->
+    <select id="getTestTaskNameById" parameterType="java.lang.Long" resultType="java.lang.String">
+      SELECT TEST_TASK_NAME
+      FROM tbl_test_task
+      WHERE ID = #{id,jdbcType=BIGINT}
+     
+    </select>
+    
+     <!--根据主键查询关联测试任务名称-->
+    <select id="getFeatureNameById" parameterType="java.lang.Long" resultType="java.lang.String">
+      SELECT FEATURE_NAME
+      FROM tbl_requirement_feature
+      WHERE ID = #{id,jdbcType=BIGINT}
+      AND STATUS = 1
+    </select>
+    
+    <select id="getUserName" parameterType="java.lang.Long" resultType="java.lang.String">
+     SELECT USER_NAME from tbl_user_info userinfo
+		where id=(
+			SELECT task.TEST_USER_ID from tbl_test_task task
+			where
+			 task.ID=#{id}
+			) 
+    </select>
+     <select id="getLogUserName" parameterType="java.lang.Long" resultType="java.lang.String">
+     SELECT USER_NAME from tbl_user_info userinfo
+		where id=#{id} 
+    </select>
+
+    <!--根据需求id查询工作任务id-->
+    <select id="getTestTaskByReqId" parameterType="java.lang.Long" resultType="java.lang.Long">
+      SELECT
+          ID
+      FROM
+          tbl_test_task
+      WHERE
+         REQUIREMENT_FEATURE_ID IN (
+              SELECT
+                  ID
+              FROM
+                  tbl_requirement_feature
+              WHERE
+                  REQUIREMENT_ID = #{requirementId}
+         )
+    </select>
+
+    <select id="getTestTaskByWindowId" parameterType="java.lang.Long" resultType="java.lang.Long">
+      SELECT
+           ID
+      FROM
+           tbl_test_task
+      WHERE
+           REQUIREMENT_FEATURE_ID IN (
+              SELECT
+                ID
+              FROM
+                tbl_requirement_feature
+              WHERE
+                COMMISSIONING_WINDOW_ID = #{windowId}
+          )
+    </select>
+    <select id="selectTestTaskByRequirementFeatureId" resultMap="BaseResultMap" resultType="list">
+    	SELECT   task.ID,task.TEST_TASK_CODE,task.TEST_TASK_NAME
+  		FROM tbl_test_task task
+  		RIGHT JOIN tbl_test_set testset ON task.ID = testset.TEST_TASK_ID
+  		WHERE task.REQUIREMENT_FEATURE_ID = #{requirementFeatureId}
+  		<if test="nameOrNumber!=null">
+  			AND	(testset.TEST_SET_NAME LIKE CONCAT('%',#{nameOrNumber},'%') OR
+  			testset.TEST_SET_NUMBER LIKE CONCAT('%',#{nameOrNumber},'%') )
+  		</if>
+  		<if test="createBy.size!=0">
+  			AND testset.CREATE_BY in
+  			<foreach collection="createBy" item="item" open="(" separator="," close=")">
+  				#{item}
+  			</foreach>
+  		</if>
+  		<if test="testTaskId.size!=0">
+  			AND task.ID in
+  			<foreach collection="testTaskId" item="item" open="(" separator="," close=")">
+  				#{item}
+  			</foreach>
+  		</if>
+		GROUP BY task.ID
+    </select>
+    
+    <select id="getDefectNum" parameterType="java.lang.Long" resultType="long">
+    	select count(*) from tbl_defect_info where TEST_TASK_ID = #{devID} and DEFECT_STATUS NOT IN (1,6) and STATUS = 1
+    </select>
+    
+    <select id="getCaseNum" parameterType="java.lang.Long" resultType="long">
+    	select IFNULL(DESIGN_CASE_NUMBER,0) from tbl_test_task where ID = #{id}
+    </select>
+    
+    <select id="getFeatureIdByTaskId" parameterType="java.lang.Long" resultType="long">
+    	select	REQUIREMENT_FEATURE_ID from tbl_test_task where ID = #{devID}
+    </select>
+    
+    <select id="selectTestStageById" parameterType="java.lang.Long" resultType="integer">
+    	SELECT DISTINCT TEST_STAGE from tbl_test_task where REQUIREMENT_FEATURE_ID = 
+    		(SELECT REQUIREMENT_FEATURE_ID FROM tbl_test_task where ID = #{id})
+			AND `STATUS` = 1 AND TEST_TASK_STATUS != 0
+    </select>
+    
+    <select id="selectTestTaskStatusById" parameterType="java.lang.Long" resultType="integer">
+    	SELECT DISTINCT TEST_TASK_STATUS from tbl_test_task where REQUIREMENT_FEATURE_ID = 
+    		(SELECT REQUIREMENT_FEATURE_ID FROM tbl_test_task where ID = #{id})
+			AND `STATUS` = 1 AND TEST_TASK_STATUS != 0
+    </select>
+ 
+ 	 <select id="selectTestTaskStatusById2" parameterType="java.lang.Long" resultType="integer">
+    	SELECT DISTINCT TEST_TASK_STATUS from tbl_test_task where REQUIREMENT_FEATURE_ID = 
+    		(SELECT REQUIREMENT_FEATURE_ID FROM tbl_test_task where ID = #{id})
+			AND `STATUS` = 1 AND TEST_TASK_STATUS != 0 AND TEST_STAGE = 2
+    </select>
+    
+    <update id="updateReqFeaStatus" parameterType="map">
+    	UPDATE tbl_requirement_feature SET REQUIREMENT_FEATURE_STATUS = #{status} WHERE ID = (SELECT REQUIREMENT_FEATURE_ID FROM tbl_test_task where ID = #{id})
+    </update>
+    
+    <select id="getSystemIdByTaskId" parameterType="java.lang.Long" resultType="long">
+    	select reqFea.SYSTEM_ID from tbl_requirement_feature reqFea
+    		left join tbl_test_task task on task.REQUIREMENT_FEATURE_ID = reqFea.ID
+    		where task.ID = #{id}
+    </select>
+</mapper>

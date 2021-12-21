@@ -1,0 +1,34 @@
+package cn.pioneeruniverse.project.controller;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.ModelAndView;
+
+import cn.pioneeruniverse.common.constants.Constants;
+import cn.pioneeruniverse.common.utils.CommonUtil;
+
+@RestController
+@RequestMapping("program")
+public class ProgramInfoController {
+
+	@RequestMapping("toProgramManage")
+	public ModelAndView toOamProject(HttpServletRequest request) {
+		ModelAndView view = new ModelAndView();
+		view.addObject("token", CommonUtil.getToken(request));
+		view.addObject("url",Constants.PROJECT_MANAGE_UI_URL+request.getRequestURI());
+		view.setViewName("program/programManage");
+		return view;
+	}
+	
+	@RequestMapping("toProgramDetail")
+	public ModelAndView toProgramDetail(HttpServletRequest request,Integer id) {
+		ModelAndView view = new ModelAndView();
+		view.addObject("token", CommonUtil.getToken(request));
+		view.addObject("url",Constants.PROJECT_MANAGE_UI_URL+request.getRequestURI());
+		view.addObject("id",id);
+		view.setViewName("program/programDetail");
+		return view;
+	}
+}

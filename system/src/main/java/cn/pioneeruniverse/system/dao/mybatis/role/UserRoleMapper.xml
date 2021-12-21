@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="cn.pioneeruniverse.system.dao.mybatis.role.UserRoleDao">  
+
+<insert id="insertUserRole" parameterType="java.util.List">
+
+ INSERT INTO TBL_USER_ROLE
+ (
+  USER_ID,
+  ROLE_ID,
+  STATUS,
+  CREATE_BY,
+  LAST_UPDATE_BY
+ )
+ VALUES
+  <foreach item="ur" collection="list" separator=",">  
+      (
+       #{ur.userId},
+       #{ur.roleId},
+       #{ur.status},
+       #{ur.createBy},
+       #{ur.lastUpdateBy}
+      )
+  </foreach>  
+</insert>
+
+<update id="delUserRoleByRoleId">
+   UPDATE TBL_USER_ROLE SET STATUS = 2,LAST_UPDATE_BY=#{lastUpdateBy} WHERE ROLE_ID IN
+   <foreach item="roleId" collection="list" open="(" close=")" separator=",">
+     #{roleId}
+   </foreach>
+
+</update>
+
+<update id="delUserRoleByUserIds">
+UPDATE TBL_USER_ROLE SET STATUS = 2,LAST_UPDATE_BY=#{lastUpdateBy} WHERE USER_ID IN
+   <foreach item="userId" collection="list" open="(" close=")" separator=",">
+     #{userId}
+   </foreach>
+</update>
+
+
+<delete id="delUserRoleByUserId" parameterType="Long">
+  DELETE FROM TBL_USER_ROLE WHERE USER_ID = #{userId}
+</delete>
+
+<delete id="delUserRole" parameterType="java.util.List">
+ DELETE FROM TBL_USER_ROLE  WHERE USER_ID IN 
+ <foreach item="userId" collection="list" open= "(" close=")" separator=",">
+	 #{userId}
+ </foreach> 
+</delete>
+
+<select id="findRoleIdByUserId" parameterType="java.lang.Long" resultType="long">
+	select ROLE_ID from tbl_user_role where USER_ID = #{id} and STATUS = 1
+</select>
+  
+
+</mapper>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.pioneeruniverse.dev.dao.mybatis.TblUserInfoMapper">
+  <resultMap id="BaseResultMap" type="cn.pioneeruniverse.dev.entity.TblUserInfo">
+    <id column="ID" jdbcType="BIGINT" property="id" />
+    <result column="USER_ACCOUNT" jdbcType="VARCHAR" property="userAccount" />
+    <result column="USER_PASSWORD" jdbcType="VARCHAR" property="userPassword" />
+    <result column="USER_NAME" jdbcType="VARCHAR" property="userName" />
+    <result column="EMPLOYEE_NUMBER" jdbcType="VARCHAR" property="employeeNumber" />
+    <result column="EMAIL" jdbcType="VARCHAR" property="email" />
+    <result column="GENDER" jdbcType="TINYINT" property="gender" />
+    <result column="BIRTHDAY" jdbcType="DATE" property="birthday" />
+    <result column="USER_TYPE" jdbcType="TINYINT" property="userType" />
+    <result column="COMPANY_ID" jdbcType="BIGINT" property="companyId" />
+    <result column="ENTRY_DATE" jdbcType="DATE" property="entryDate" />
+    <result column="LEAVE_DATE" jdbcType="DATE" property="leaveDate" />
+    <result column="DEPT_ID" jdbcType="INTEGER" property="deptId" />
+    <result column="USER_STATUS" jdbcType="TINYINT" property="userStatus" />
+    <result column="IS_ALLOWED" jdbcType="TINYINT" property="isAllowed" />
+    <result column="USER_SCM_PASSWORD" jdbcType="VARCHAR" property="userScmPassword" />
+    <result column="STATUS" jdbcType="TINYINT" property="status" />
+    <result column="CREATE_BY" jdbcType="BIGINT" property="createBy" />
+    <result column="CREATE_DATE" jdbcType="TIMESTAMP" property="createDate" />
+    <result column="LAST_UPDATE_BY" jdbcType="BIGINT" property="lastUpdateBy" />
+    <result column="LAST_UPDATE_DATE" jdbcType="TIMESTAMP" property="lastUpdateDate" />
+  </resultMap>
+
+  <resultMap type="cn.pioneeruniverse.common.dto.TblDeptInfoDTO" id="deptResultMap">
+    <id column="ID" property="id"/>
+    <result column="DEPT_NAME" property="deptName"/>
+    <result column="DEPT_NUMBER" property="deptNumber"/>
+    <result column="PARENT_DEPT_NUMBER" property="parentDeptNumber"/>
+    <result column="PARENT_DEPT_ID" property="parentDeptId"/>
+    <result column="PARENT_DEPT_IDS" property="parentDeptIds"/>
+    <result column="STATUS" property="status"/>
+    <result column="CREATE_BY" property="createBy"/>
+    <result column="CREATE_DATE" property="createDate"/>
+    <result column="LAST_UPDATE_BY" property="lastUpdateBy"/>
+    <result column="LAST_UPDATE_DATE" property="lastUpdateDate"/>
+  </resultMap>
+  
+  <select id="getUserById" parameterType="java.lang.Long" resultMap="BaseResultMap">
+  	select * from tbl_user_info where ID = #{userId}
+  </select>
+
+  <select id="findDeptById" parameterType="java.lang.Long" resultMap="deptResultMap">
+  	select * from tbl_dept_info where ID = #{deptId}
+  </select>
+
+  <select id="getUserByAccount" parameterType="String" resultMap="BaseResultMap">
+  	select * from tbl_user_info where USER_ACCOUNT = #{userAccount}
+  </select>
+
+  <!-- 同步时查询用户信息，无视状态 -->
+  <select id="findIdByUserAccount" parameterType="java.lang.String" resultType="long">
+  	select ID from TBL_USER_INFO WHERE USER_ACCOUNT = #{userAccount,jdbcType=VARCHAR} AND STATUS=1
+  </select>
+
+  <!-- 查询人员岗位 -->
+  <select id="findRoleByUserIds" parameterType="map" resultType="String">
+  	select  tur.USER_ID from `tbl_user_role` tur where tur.`USER_ID` in
+    <foreach collection="userIds" item="id" index="index" open="(" separator="," close=")">
+      #{id}
+    </foreach>
+     and tur.`ROLE_ID` in
+   (select tri.id from `tbl_role_info` tri where tri.`ROLE_NAME`=#{roleName} and tri.PROJECT_ID in
+
+
+    <foreach collection="projectIds" item="projectId" index="index" open="(" separator="," close=")">
+      #{projectId}
+    </foreach>
+
+
+
+
+    and tri.status=1)
+  </select>
+</mapper>

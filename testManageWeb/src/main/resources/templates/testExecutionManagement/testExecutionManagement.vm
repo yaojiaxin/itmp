@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" type="text/css" href="#springUrl('')/systemui/static/css/frame/font-awesome.min.css ">
+    <link rel="stylesheet" type="text/css" href="#springUrl('')/systemui/static/css/frame/bootstrap.min.css" />
+    <link rel="stylesheet" href="#springUrl('')/systemui/static/css/frame/bootstrapValidator.css" />
+    <link rel="stylesheet" href="#springUrl('')/systemui/static/css/frame/bootstrap-table.min.css">
+    <link rel="stylesheet" href="#springUrl('')/systemui/static/css/frame/bootstrap-select.min.css">
+    <link rel="stylesheet" type="text/css" href="#springUrl('')/systemui/static/jqgrid/jqgrid/css/ui.jqgrid-bootstrap4.css" />
+    <link rel="stylesheet" href="#springUrl('')/systemui/static/jqgrid/jqgrid/css/jqGridDefined.css" />
+
+    <link rel="stylesheet" href="#springUrl('')/systemui/static/css/frame/component.css">
+    <link rel="stylesheet" href="#springUrl('')/systemui/static/css/common/common.css">
+    <link rel="stylesheet" href="#springUrl('')/testManageui/static/css/testExecution/testExrcutionManagement.css">
+    
+    <script src="#springUrl('')/systemui/static/js/frame/jquery.min.js"></script>
+    <script src="#springUrl('')/systemui/static/js/frame/echarts.common.min.js"></script>
+    <script src="#springUrl('')/systemui/static/js/frame/bootstrap.min.js"></script>
+    <script src="#springUrl('')/systemui/static/js/frame/bootstrap-select.min.js"></script>
+    <script src="#springUrl('')/systemui/static/js/frame/defaults-zh_CN.min.js"></script>
+    <script src="#springUrl('')/systemui/static/js/frame/bootstrap-table.min.js"></script>
+    <script src="#springUrl('')/systemui/static/js/frame/bootstrap-table-zh-CN.min.js"></script>
+    <script type="text/javascript" src="#springUrl('')/systemui/static/js/frame/bootstrapValidator.js"></script>
+    <script src="#springUrl('')/systemui/static/jqgrid/js/jquery-ui.min.js"></script>
+    <script src="#springUrl('')/systemui/static/jqgrid/jqgrid/js/i18n/grid.locale-cn.js"></script>
+    <script src="#springUrl('')/systemui/static/jqgrid/js/jquery.jqGrid.js"></script>
+    <script src="#springUrl('')/systemui/static/js/frame/layer.js"></script>
+    <script src="#springUrl('')/systemui/static/js/common/common.js"></script>
+    <script src="#springUrl('')/testManageui/static/js/common/modal.js"></script>
+    <script src="#springUrl('')/testManageui/static/js/testExecution/fileOpt.js"></script>
+    <script src="#springUrl('')/testManageui/static/js/testExecution/execution.js"></script>
+    <script src="#springUrl('')/testManageui/static/js/testExecution/executionPopup.js"></script> 
+    <script src="#springUrl('')/testManageui/static/js/testExecution/testExrcutionManagement.js"></script>
+    <script src="#springUrl('')/testManageui/static/js/testExecution/formValidator.js"></script> 
+    <script>
+        $.jgrid.defaults.responsive = true;
+        $.jgrid.defaults.styleUI = 'Bootstrap4';
+        $.jgrid.defaults.iconSet = "fontAwesome";
+        
+        var batchExecution= $auth.hasPermission("$token","testManage:testExecution:batchExecution");//批量执行
+        var testCaseExprot = $auth.hasPermission("$token","testManage:testExecution:exprot"); //导出
+        var testCaseRoundExprot = $auth.hasPermission("$token","testManage:testExecution:exprotRound"); //轮次导出
+        var testCaseStepEdit = $auth.hasPermission("$token","testManage:testExecution:editTestCase");//编辑
+        var testCaseExecution = $auth.hasPermission("$token","testManage:testExecution:executeCase"); // 案例执行
+        var testCaseSee = $auth.hasPermission("$token","testManage:testExecution:seeCase"); //查看
+        
+    </script>
+    </head>
+    <body> 
+    <div id="loading"> 
+  <img class="loadingImg" src="#springUrl('')/testManageui/static/images/loadingPic.gif" />
+ </div>
+     <div class="hiddenResult hideBlock">
+     	<select class="selectpicker" id="executionSelect" name="TaskPType">
+			#foreach($dictMap in ${dict.getDictMap(
+			"TBL_TEST_SET_CASE_STEP_STEP_EXECUTE_RESULT").entrySet()})
+ 				<option value="${dictMap.key}">${dictMap.value}</option>
+			#end
+		</select>
+     </div>
+      <div class="hiddenResult hideBlock">
+     	<select class="selectpicker" id="relatedDefectsType" name="relatedDefectsType">
+			#foreach($dictMap in ${dict.getDictMap(
+			"TBL_DEFECT_INFO_SEVERITY_LEVEL").entrySet()})
+ 				<option value="${dictMap.key}">${dictMap.value}</option>
+			#end
+		</select>
+     </div> 
+     <div class="left"> 
+        <div class="left_top">
+            <div class="left_top_search">
+                <div class="rowdiv">
+                	<div class="def_col_8 input_search ">
+                        <input type="text" onblur="getAllExecuteCase()" id="checkTaskName" class="form-control" placeholder="测试任务" /> 
+                    </div>
+                    <div class="def_col_1">
+                    </div>
+                    <div class="def_col_11 input_search">
+                        <input type="text" onblur="getAllExecuteCase()" id="checkTestSetName" class="form-control" placeholder="测试集名称" />
+                        <span class="fa fa-search"></span>
+                    </div>
+                    <div class="def_col_1 border_right">
+                    </div>
+                    <div class="def_col_1">
+                    </div>
+                    <div class="def_col_14 ">
+                        <div class="selectFont ">仅进行中任务</div>
+                        <div id="onlyDoing" class="def_choice def_Selection">
+                            <div class="def_choice_circle"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rowdiv">
+                	<div class="def_col_20 input_search ">
+                        <input type="text" onblur="getAllExecuteCase()" id="executeResult" class="form-control" placeholder="执行状态" /> 
+                    </div>
+                    <div class="def_col_2">
+                    </div>
+                    <div class="def_col_14 ">
+                        <div class="selectFont ">自己的任务</div>
+                        <div id="onlyDoing2" class="def_choice def_Selection">
+                            <div class="def_choice_circle"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rowdiv hiddenResult hideBlock">
+                    <div class="def_col_16">
+                        <select class="selectpicker" id="userId">
+                        	<option val=''>请选择全部执行人</option>
+                        </select>
+                    </div>
+                    <div class="def_col_2 border_right">
+                    </div>
+                    <div class="def_col_2">
+                    </div>
+                    <div class="def_col_16">
+                        <select class="selectpicker" id="executeStatus">
+                        	<option>请选择全部执行状态</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="left_bottom"  id="taskTree">
+        </div> 
+    </div>
+    
+    <div class="right_blank">
+		<div class="right_alert">
+			<div class="haveNoFontRight">
+				<span>请点击左侧列表中的一个测试集</span>
+			</div>
+		</div>
+	</div>
+    <div class="right">
+        <div class="right_div rightCaseDivNew">
+            <div class="right_div_tit">
+                <div class="right_div_titFont"></div>
+                #if($auth.hasPermission("$token","testManage:testExecution:editTestCase"))
+          		   <div class="right_div_titImg" onclick="showEditCase()">
+                    <img src="#springUrl('')/testManageui/static/images/testExe/edit.png" />
+             	   </div>
+       			 #end
+               
+            </div>
+            <div class="right_div_body">
+                <div class="rowdiv">
+                    <div class="rightModal">
+                        <div class="form-group def_col_36">
+                            <div class="tagTitle">
+                                <label class="def_col_4 font_right control-label fontWeihgt">前置条件：</label>
+                                <div class="def_col_32">
+                                    <label class="control-label font_left def_show" id="newCasePrecondition"></label>
+                                    <input type="hidden" id="testSetCaseId" value=""/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rowdiv">
+                    <div class="rightModal">
+                        <div class="form-group def_col_18">
+                            <div class="tagTitle">
+                                <label class="def_col_8 font_right control-label fontWeihgt">输入数据：</label>
+                                <div class="def_col_28">
+                                    <label class="control-label font_left def_show" id="inputData"></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group def_col_18">
+                            <div class="tagTitle">
+                                <label class="def_col_8 font_right control-label fontWeihgt">测试项：</label>
+                                <div class="def_col_28">
+                                    <label class="control-label font_left def_show" id="testPoint"></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rowdiv">
+                    <div class="rightModal">
+                        <div class="form-group def_col_18">
+                            <div class="tagTitle">
+                                <label class="def_col_8 font_right control-label fontWeihgt">模块：</label>
+                                <div class="def_col_28">
+                                    <label class="control-label font_left def_show" id="moduleName"></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group def_col_18">
+                            <div class="tagTitle">
+                                <label class="def_col_8 font_right control-label fontWeihgt">业务类型：</label>
+                                <div class="def_col_28">
+                                    <label class="control-label font_left def_show" id="businessType"></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rowdiv">
+                    <div class="rightModal">
+                        <div class="form-group def_col_18">
+                            <div class="tagTitle">
+                                <label class="def_col_8 font_right control-label fontWeihgt">预期结果：</label>
+                                <div class="def_col_28">
+                                    <label class="control-label font_left def_show" id="expectResult"></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <br><hr><br>
+                <div class="rightModal">
+                    <div class="tagTitle">案例步骤：</div> 
+                    <div class="tagBody">
+                        <table id="CaseSteps" style="word-break:break-all; word-wrap:break-all;table-layout:fixed"></table>
+                    </div>
+                </div>
+                <div class="rightModal margB">
+                    <div class="tagTitle">
+                        <div class="rowdiv">
+                            <div class="form-group">
+                                <div class="def_col_4 fontWeihgt">相关附件：</div>
+                                <div class="def_col_32">
+                                <input type="hidden" name="attachFiles" id="files" value=""/>
+                                    <div class="myUpfileDiv"><input type="file" class="myUpfile" multiple="multiple" id="newUploadFile"/></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tagBody fileDiv">
+                        <table class="fileTable" id="newUpfileTable"></table>
+                    </div>
+                </div>
+                <div class="rightModal borderBottom">
+                <div class="tagTitle">
+                    <div class="rowdiv">
+                        <div class="form-group">
+                            <div class="def_col_4 fontWeihgt">历史备注：</div>
+                            <div class="def_col_32" id="checkExcuteRemark2"></div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+                <div class="rightModal">
+                  ## <input type="text" id="objData" value=""/>
+                   <textarea style="resize:none;" class="def_textarea" id="excuteRemark" placeholder="请输入备注"></textarea>
+                </div>
+            </div>
+            <div class="right_btnGroup">
+                <button type="button" class="btn btn-success" onclick="getTestCaseStep( 2 )">执行成功</button>
+                <button type="button" class="btn btn-danger" onclick="getTestCaseStep( 3 )">执行失败</button>
+                <button type="button" class="btn btn-danger" onclick="getTestCaseStep( 0 )">执行失败并提交Bug</button>
+                <button type="button" class="btn btn-stop" onclick="getTestCaseStep(4 )">挂起</button>
+                <button type="button" class="btn btn-primary" onclick="getTestCaseStep( 5 )">撤销</button>
+                <button type="button" class="btn btn-default"  onclick="closeClose()">取消</button>
+            </div>
+        </div>
+        <div class="right_div rightCaseDivCheck" >
+            <div class="right_div_tit">
+                <div class="right_div_titFont" id="checkTitle"></div>
+            </div>
+            <div class="right_div_body">
+                <div class="rightModal">
+                    <div class="exeResult successBg">执行结果：Pass</div>
+                    <div class="exeResult failBg">执行结果：Failed</div>
+                    <div class="exeResult" id="checkNameAndTime"></div>
+                </div>
+
+                <div class="rowdiv">
+                    <div class="rightModal">
+                        <div class="form-group def_col_36">
+                            <div class="tagTitle">
+                                <label class="def_col_4 font_right control-label fontWeihgt">前置条件：</label>
+                                <div class="def_col_32">
+                                    <label class="control-label font_left def_show" id="checkCasePrecondition"></label>
+                                    <input type="hidden" id="testSetCaseId" value=""/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rowdiv">
+                    <div class="rightModal">
+                        <div class="form-group def_col_18">
+                            <div class="tagTitle">
+                                <label class="def_col_8 font_right control-label fontWeihgt">输入数据：</label>
+                                <div class="def_col_28">
+                                    <label class="control-label font_left def_show" id="check_inputData"></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group def_col_18">
+                            <div class="tagTitle">
+                                <label class="def_col_8 font_right control-label fontWeihgt">测试项：</label>
+                                <div class="def_col_28">
+                                    <label class="control-label font_left def_show" id="check_testPoint"></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rowdiv">
+                    <div class="rightModal">
+                        <div class="form-group def_col_18">
+                            <div class="tagTitle">
+                                <label class="def_col_8 font_right control-label fontWeihgt">模块：</label>
+                                <div class="def_col_28">
+                                    <label class="control-label font_left def_show" id="check_moduleName"></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group def_col_18">
+                            <div class="tagTitle">
+                                <label class="def_col_8 font_right control-label fontWeihgt">业务类型：</label>
+                                <div class="def_col_28">
+                                    <label class="control-label font_left def_show" id="check_businessType"></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rowdiv">
+                    <div class="rightModal">
+                        <div class="form-group def_col_18">
+                            <div class="tagTitle">
+                                <label class="def_col_8 font_right control-label fontWeihgt">预期结果：</label>
+                                <div class="def_col_28">
+                                    <label class="control-label font_left def_show" id="check_expectResult"></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <br><hr><br>
+                <div class="rightModal">
+                    <div class="tagTitle">案例步骤：</div>
+                    <div class="tagBody">
+                        <table id="checkCaseSteps" style="word-break:break-all; word-wrap:break-all;table-layout:fixed" ></table>
+                    </div>
+                </div>
+                <div class="rightModal">
+                    <div class="tagTitle">
+                        <div class="rowdiv">
+                            <div class="form-group">
+                                <div class="def_col_4 fontWeihgt">相关附件：</div>
+                                <div class="def_col_32">
+                                <input type="hidden" name="attachFiles" id="seeFiles" value=""/>
+                                <table class="fileTable" id="checkUpfileTable"></table>
+                                    ##<div class="myUpfileDiv"><input type="file" class="myUpfile" multiple="multiple" id="checkUploadFile"/></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                   ## <div class="tagBody fileDiv">
+                      ##  <table class="fileTable" id="checkUpfileTable"></table>
+                    ##</div>
+                </div>
+                <div class="rightModal borderBottom">
+                    <div class="rowdiv">
+                        <div class="form-group">
+                            <div class="def_col_4 fontWeihgt">备注信息：</div>
+                            <div class="def_col_32" id="checkExcuteRemark"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rightModal">
+                    <div class="rowdiv">
+                        <div class="form-group">
+                            <div class="def_col_4 fontWeihgt">关联缺陷：</div>
+                            <div class="def_col_32" id="checkRelatedDefects">
+                                 
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> 
+        <div class="right_div rightCaseDivEdit">
+            <div class="right_div_tit">
+                <div class="right_div_titImg noLeftPadding">
+                    <img src="#springUrl('')/testManageui/static/images/testExe/edit.png" />
+                </div>
+                <div class="right_div_titFont">编辑案例</div>
+            </div>
+            <div class="right_div_body">
+            	<form id="editForm">
+	            	<input type="hidden" id="editHideId" value="">
+	            	<input type="hidden" id="caseNumber" value="">
+                    <div class="rowdiv">
+                        <div class="form-group def_col_36">
+                            <label class="def_col_4 control-label fontWeihgt">案例名称：</label>
+                            <div class="def_col_32">
+                                <input type="text" class="form-control" placeholder="请填写案例名称" id="editCaseName" name="editCaseName" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="rowdiv">
+                        <div class="form-group def_col_36">
+                            <label class="def_col_4 control-label fontWeihgt">前置条件：</label>
+                            <div class="def_col_32">
+                                <textarea class="def_textarea" placeholder="请输入备注。"
+                                          id="editCasePrecondition" name="editCasePrecondition"></textarea>
+                            </div>
+                        </div>
+                    </div>
+	                <div class="rowdiv">
+	                    <div class="form-group def_col_16">
+	                        <label class="def_col_9 control-label fontWeihgt">关联任务：</label>
+	                        <div class="def_col_27">
+	                            <input type="text" class="form-control pointStyle" readonly  placeholder="请选择关联任务" idValue id="editTestTaskName" name="editTestTaskName" />
+	                        </div>
+	                    </div>
+	                    <div class="def_col_4"></div>
+	                    <div class="form-group def_col_16">
+	                        <label class="def_col_9 control-label fontWeihgt">涉及系统：</label>
+	                        <div class="def_col_27">
+	                            <input type="text" class="form-control pointStyle" readonly  placeholder="请选择涉及系统" idValue id="editSystemName" name="editSystemName" />
+	                        </div>
+	                    </div>
+	                </div>
+
+                    <div class="rowdiv">
+                        <div class="form-group def_col_16">
+                            <label class="def_col_9 control-label fontWeihgt">输入数据：</label>
+                            <div class="def_col_27">
+                                <input type="text" class="form-control" placeholder="请填写输入数据" id="edit_inputData" name="edit_inputData" />
+                            </div>
+                        </div>
+                        <div class="def_col_4"></div>
+                        <div class="form-group def_col_16">
+                            <label class="def_col_9 control-label fontWeihgt">测试项：</label>
+                            <div class="def_col_27">
+                                <input type="text" class="form-control" placeholder="请填写测试项" id="edit_testPoint" name="edit_testPoint" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="rowdiv">
+                        <div class="form-group def_col_16">
+                            <label class="def_col_9 control-label fontWeihgt">模块：</label>
+                            <div class="def_col_27">
+                                <input type="text" class="form-control" placeholder="请填写模块" id="edit_moduleName" name="edit_moduleName" />
+                            </div>
+                        </div>
+                        <div class="def_col_4"></div>
+                        <div class="form-group def_col_16">
+                            <label class="def_col_9 control-label fontWeihgt">业务类型：</label>
+                            <div class="def_col_27">
+                                <input type="text" class="form-control" placeholder="请填写业务类型" id="edit_businessType" name="edit_businessType" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="rowdiv">
+                        <div class="form-group def_col_16">
+                            <label class="def_col_9 control-label fontWeihgt">预期结果：</label>
+                            <div class="def_col_27">
+                                <input type="text" class="form-control" placeholder="请填写预期结果" id="edit_expectResult" name="edit_expectResult" />
+                            </div>
+                        </div>
+                    </div>
+
+	                <div class="rightModal">
+	                    <div class="tagTitle">案例步骤：</div>
+	                    <div class="btnArea">
+		                    <button type="button" class="btn btn-primary" onclick="addSteps()">增加步骤</button>
+		                </div>
+	                    <div class="tagBody">
+	                        <table id="editCaseSteps">
+	
+	                        </table>
+	                    </div>
+	                </div>
+            	</form> 
+            </div>
+            <div class="right_btnGroup">
+                <button type="button" class="btn btn-primary" onclick="UpdateCaseStep()">保 存</button>
+                <button type="button" class="btn btn-default" onclick="closeClose()">取 消</button>
+            </div>
+        </div>
+        <div class="right_div batchExecutivePage" >
+        	<input type="hidden" id="executeHiddenID" val='' />
+        	<input type="hidden" id="exeExcuteRound" val='' />
+            <div class="right_div_tit">
+                <div class="right_div_titFont" id="exeTitleName"></div>
+               <input id="excuteRound" type="hidden"/>
+            </div>
+            <div class="right_div_body">
+	            <div class="rowdiv">
+	            	<label class="def_col_4 control-label fontWeihgt">执行状态：</label>
+                    <div class="def_col_14">
+                    	<select class="selectpicker" id="exeExecuteState" multiple="multiple" name="exeExecuteState"> 
+							#foreach($dictMap in ${dict.getDictMap(
+								"TBL_TEST_SET_CASE_CASE_EXECUTE_RESULT").entrySet()})
+								<option value="${dictMap.key}">${dictMap.value}</option>
+							#end
+						</select> 
+					</div>  
+					<div class="def_col_1">
+                     	 
+					</div>
+					 <div class="def_col_17">
+                     	<button type="button" class="btn btn-primary" onclick="initExecutionTable()"> 搜 索 </button>
+					</div>
+			    </div> 
+                <div class="btnArea">
+                    <button type="button" class="btn btn-primary" onclick="batchPass()">批量通过</button>
+                </div>
+                <div class="rightTableArea">
+                    <table id="executionTable"></table> 
+                </div>
+            </div>
+        </div>
+    </div>
+    
+   <div class="modal fade bs-example-modal-lg" id="commitBug" tabindex="-1" role="dialog" aria-labelledby="assignPersonModal">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <span class="modal-title">新建缺陷</span>
+                </div>
+                <div class="modal-body">
+                <form class="form-horizontal" id="newDefectFrom" accept-charset="utf-8" enctype="multipart/form-data">
+                    <div class="rowdiv">
+                        <div class="form-group def_col_36">
+                            <label class="def_col_4 control-label font_right">工作任务：</label>
+                            <div class="def_col_32">
+                            	<input id="testTaskId" type="hidden"/>
+                                <input id="new_requirementCode" type="hidden"/>
+                                <input id="new_commissioningWindowId" type="hidden"/>
+                                <input type="text" class="form-control  readonly" onFocus="this.blur();" readonly placeholder="请选择"  id="testTaskName" name="testTaskName" />
+                            </div> ##onclick="shouTestTask('defect')"
+                        </div>
+                    </div>
+                    <div class="rowdiv">
+                        <div class="form-group def_col_18">
+                            <label class="def_col_8 control-label font_right"><span  id="sp">*</span>所属系统：</label>
+                            <div class="def_col_28">
+                                 <input id="systemId" type="hidden"/>
+                                 <input type="text" class="form-control" style="background-color: white" disabled placeholder="" id="system_Name" name="system_Name"/>
+                            </div>
+                        </div>
+                        <div class="form-group def_col_18">
+                            <label class="def_col_8 control-label font_right">关联案例：</label>
+                            <div class="def_col_28">
+                             	<input id="testSetCaseExecuteId" type="hidden"/>
+                             	<input id="testcaseNumber" type="hidden"/>
+                                <input type="text" class="form-control" style="background-color: white" placeholder="请填写关联案例" disabled id="testCaseName" name="testCaseName"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="rowdiv">
+                        <div class="form-group def_col_36">
+                            <label class="def_col_4 control-label font_right"><span  id="sp">*</span>缺陷摘要：</label>
+                            <div class="def_col_32">
+                                <input type="text" class="form-control" placeholder="请填写缺陷摘要" id="new_defectSummary" name="defectSummary"/>
+                            </div>
+                        </div>
+                       
+                    </div>
+                    <div class="rowdiv">
+                        <div class="form-group def_col_18">
+                            <label class="def_col_8 control-label font_right"><span  id="sp">*</span>缺陷类型：</label>
+                            <div class="def_col_28">
+                                <select class="selectpicker" id="new_defectType" name="defectType">
+                                        <option value="">----请选择----</option>
+                                        #foreach($dictMap in ${dict.getDictMap(
+                                            "TBL_DEFECT_INFO_DEFECT_TYPE").entrySet()})
+                                            <option value="${dictMap.key}">${dictMap.value}</option>
+                                        #end
+                                    </select>
+                            </div>
+                        </div>
+                        <div class="form-group def_col_18">
+                            <label class="def_col_8 control-label font_right"><span  id="sp">*</span>缺陷来源：</label>
+                            <div class="def_col_28">
+                                <select class="selectpicker"   id="new_defectSource" name="defectSource">
+                                        <option value="">----请选择----</option>
+                                        #foreach($dictMap in ${dict.getDictMap(
+                                            "TBL_DEFECT_INFO_DEFECT_SOURCE").entrySet()})
+                                            <option value="${dictMap.key}">${dictMap.value}</option>
+                                        #end
+                                    </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="rowdiv">
+                        <div class="form-group def_col_18">
+                            <label class="def_col_8 control-label font_right"><span  id="sp">*</span>严重级别：</label>
+                            <div class="def_col_28">
+                                <select class="selectpicker" id="new_severityLevel" name="severityLevel">
+                                        <option value="">----请选择----</option>
+                                        #foreach($dictMap in ${dict.getDictMap(
+                                            "TBL_DEFECT_INFO_SEVERITY_LEVEL").entrySet()})
+                                            <option value="${dictMap.key}">${dictMap.value}</option>
+                                        #end
+                                    </select>
+                            </div>
+                        </div>
+                        <div class="form-group def_col_18">
+                            <label class="def_col_8 control-label font_right"><span  id="sp">*</span>紧急程度：</label>
+                            <div class="def_col_28">
+                                <select class="selectpicker" id="new_emergencyLevel" name="emergencyLevel">
+                                        <option value="">----请选择----</option>
+                                        #foreach($dictMap in ${dict.getDictMap(
+                                            "TBL_DEFECT_INFO_EMERGENCY_LEVEL").entrySet()})
+                                            <option value="${dictMap.key}">${dictMap.value}</option>
+                                        #end
+                                    </select>
+                            </div>
+                        </div>
+                    </div>
+                      <div class="rowdiv">
+                            <div class="form-group">
+                            <label class="def_col_4 control-label font_right"><span  id="sp">*</span>修复轮次：</label>
+                               
+                                <div class="def_col_14">
+                                    <input type="number" min="0" max="1000000" class="form-control" placeholder="请输入"
+                                           onkeyup="if(this.value.length==1){this.value=this.value.replace(/[^1-9]/g,'')}else{this.value=this.value.replace(/\D/g,'')}"
+                                           onafterpaste="if(this.value.length==1){this.value=this.value.replace(/[^1-9]/g,'0')}else{this.value=this.value.replace(/\D/g,'')}"
+                                           id="new_repairRound" name="repairRound"/>
+                                </div>
+                            </div>
+                        </div>
+                    <div class="rowdiv">
+                        <div class="form-group def_col_36">
+                            <label class="def_col_4 control-label font_right">缺陷描述：</label>
+                            <div class="def_col_32">
+                                <textarea  class="form-control" placeholder="请输入" id="defectOverview" name="defectOverview"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                   <div class="rowdiv">
+                            <div class="def_col_4 font_right topMargin">
+                                相关附件：
+                            </div>
+                            <div class="def_col_32">
+                                <div class="file-upload-select">
+                                    <input type="file" name="files" class="upload-files" multiple="multiple" id="upBugUploadFile" />
+                                </div>
+                                <div class="file-upload-list">
+                                    <table class="file-upload-tb" id='newFileTable'>
+
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    <div class="rowdiv borderBottom">
+                        <div class="form-group def_col_36">
+                            <div class="def_col_4"></div>
+                            <div class="def_col_32">
+                                <table class="fileTable" id="commitBugUpfileTable"></table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="assign">
+                        <div class="rowdiv ">
+                            <div class="form-group def_col_25">
+                                <label class="def_col_18 control-label font_right fontWeihgt">将此缺陷指派给：</label>
+                                <div class="def_col_18">
+                                    <input type="hidden" id="new_assignUserId"/>
+                                    <input type="text" class="form-control pointStyle" onclick="userInit" onFocus="this.blur();" placeholder="请输入" id="new_assignUserName" name="assignUserName"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="submitDefect()">提交</button>
+                    <button type="button" class="btn btn-temporary" onclick="stagDefect()">暂 存</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取 消</button>
+                </div>
+            </div>
+        </div>
+    </div> 
+    #*工作任务弹窗*#
+    <div  class="modal fade bs-example-modal-lg" tabindex="-1" id="testTaskModal" role="dialog" aria-labelledby="newPerson" >
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content modalStyle">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <span>请选择工作任务</span>
+                </div>
+                <div class="modal-body">
+                    <div class="color1">
+                        <div class="container-fluid" id="testTaskFrom">
+                            <div class="row control-row">
+                                <div class="col-md-4">
+                                    <div class="search_font"><label class="control-label">任务编号：</label></div>
+                                    <div class="search_input">
+                                        <input type="text" class="form-control" placeholder="请输入"  autocomplete="off" id="taskCode" name="taskCode" value="" />
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="search_font"><label class="control-label">任务名称：</label></div>
+                                    <div class="search_input">
+                                        <input type="text" class="form-control" placeholder="请输入"   autocomplete="off" id="taskName" name="taskName" value="" />
+
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="search_font"><label class="control-label">任务状态：</label></div>
+                                    <div class="search_input">
+                                        <select class="selectpicker" id="taskState"  name="taskState">
+                                            #foreach($dictMap in ${dict.getDictMap(
+                                                "TBL_TEST_TASK_TEST_TASK_STATUS").entrySet()})
+                                                <option value="${dictMap.key}">${dictMap.value}</option>
+                                            #end
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row control-row search_btn">
+                                <button type="button" class="btn btn-primary" onclick="EtestTaskShow()">搜&nbsp;&nbsp;&nbsp;索</button>
+                                <button type="button" class="btn btn-default" onclick="cleanTextTask()">重&nbsp;&nbsp;&nbsp;置</button>
+                            </div>
+                        </div>
+                        <div id="downBtn1">
+                            <span class="fa fa-caret-up"></span>
+                        </div>
+                    </div>
+                    <br>
+
+                    <div class="content-table">
+                        <div class="wode">
+                            <table id="testTaskTable"></table>
+                            <div id="testTaskPage"></div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="selectTask(typeName)" >确定</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+     #*人员弹框*#
+    <div class="modal fade bs-example-modal-lg" id="userModal" tabindex="-1" role="dialog" aria-labelledby="newPerson">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content modalStyle">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        &times;
+                    </button>
+                    <span>选择人员</span>
+                </div>
+                <div class="modal-body">
+                    <div class="color1">
+                        <div class="container-fluid" id="userForm">
+                            <div class="row control-row">
+                                <div class="col-md-4">
+                                    <div class="search_font"><label class="control-label">姓名：</label></div>
+                                    <div class="search_input">
+                                        <input type="text" class="form-control " placeholder="请输入" id="userName" name="userName" value="" />
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="search_font"><label class="control-label">部门：</label></div>
+                                    <div class="search_input">
+                                     <input type="text" class="form-control " placeholder="请输入" id="deptName" name="deptName" value="" />
+                                        
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="search_font"><label class="control-label">公司：</label></div>
+                                    <div class="search_input">
+                                    <input type="text" class="form-control " placeholder="请输入" id="companyName" name="companyName" value="" />
+                                       
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row control-row search_btn">
+                                <button type="button" class="btn btn-primary" onclick="userTableShow()">搜&nbsp;&nbsp;&nbsp;索</button>
+                                <button type="button" onclick="userReset()" class="btn btn-default">重&nbsp;&nbsp;&nbsp;置</button>
+                            </div> 
+                        </div>
+                        <div id="downBtn3">
+                            <span class="fa fa-caret-up"></span>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="content-table">
+                        <div class="wode">
+                            <table id="userTable"></table>
+                            <div id="userPage"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <div class="bottom-container">
+                        <button type="button" id="userbutton" class="btn btn-primary" data-user="default" onclick="commitUser()">确定</button>
+                        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> 
+</body>
+</html>

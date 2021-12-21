@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.pioneeruniverse.project.dao.mybatis.assetLibrary.SystemDirectoryDocumentDao">
+
+    <select id="getDocumentTypesBySystemIds" resultMap="systemDirctoryDocumentDTOMap" resultType="java.util.List">
+        SELECT
+        temp.SYSTEM_ID,
+        temp.DOCUMENT_TYPE,
+        tsdt.DOCUMENT_TYPE AS "DOCUMENT_TYPE_NAME"
+        FROM (
+        SELECT
+        tsdd.SYSTEM_ID,
+        tsdd.DOCUMENT_TYPE
+        FROM tbl_system_directory_document tsdd
+        WHERE tsdd.STATUS = 1
+        <if test="systemIds != null and systemIds != ''">
+            AND tsdd.SYSTEM_ID IN
+            <foreach collection="systemIds.split(',')" item="item1" open="(" separator="," close=")"
+                     index="index1">
+                #{item1}
+            </foreach>
+        </if>
+        AND tsdd.DOCUMENT_TYPE IS NOT NULL
+        GROUP BY tsdd.SYSTEM_ID,tsdd.DOCUMENT_TYPE
+        ) temp
+        LEFT JOIN tbl_system_document_type tsdt ON tsdt.ID = temp.DOCUMENT_TYPE
+        WHERE tsdt.STATUS = 1
+    </select>
+
+    <select id="getDocumentsUnderDocumentTypesDirectory" resultMap="systemDirctoryDocumentDTOMap"
+            resultType="java.util.List">
+        SELECT
+        tsdd.ID,
+        tsdd.DOCUMENT_NAME,
+        tsdd.DOCUMENT_S3_BUCKET,
+        tsdd.DOCUMENT_S3_KEY,
+        tsdd.DOCUMENT_TEMP_S3_KEY,
+        CASE WHEN tsdd.CREATE_BY IS NOT NULL THEN (SELECT TUI1.USER_NAME FROM tbl_user_info TUI1 WHERE TUI1.ID =
+        tsdd.CREATE_BY LIMIT 1) ELSE NULL END AS "CREATE_USER_NAME",
+        tsdd.CREATE_DATE,
+        CASE WHEN tsdd.CHECKOUT_USER_ID IS NOT NULL THEN (SELECT TUI2.USER_NAME FROM tbl_user_info TUI2 WHERE TUI2.ID =
+        tsdd.CHECKOUT_USER_ID LIMIT 1) ELSE NULL END AS "CHECKOUT_USER_NAME",
+        tsdd.LAST_UPDATE_DATE,
+        CASE WHEN (SELECT COUNT(1) FROM tbl_system_directory_document_requirement tsddr WHERE
+        tsddr.SYSTEM_DIRECTORY_DOCUMENT_ID = tsdd.ID) > 0 THEN 1 ELSE 0 END AS "EXIST_RELATED_INFO",
+        tsdd.SAVE_TYPE
+        FROM tbl_system_directory_document tsdd
+        WHERE
+        tsdd.SYSTEM_ID = #{systemId}
+        AND tsdd.DOCUMENT_TYPE = #{documentType}
+        AND tsdd.STATUS = 1
+    </select>
+
+    <update id="updateVersionForCoverUploadDocument">
+        UPDATE tbl_system_directory_document tsdd
+        SET tsdd.DOCUMENT_VERSION = tsdd.DOCUMENT_VERSION + 1
+        AND tsdd.DOCUMENT_NAME = #{documentName}
+        AND tsdd.DOCUMENT_S3_KEY = #{documentS3Key}
+        AND tsdd.LAST_UPDATE_BY = #{lastUpdateBy}
+        AND tsdd.LAST_UPDATE_DATE = #{lastUpdateDate}
+        WHERE tsdd.ID = #{id}
+    </update>
+
+    <select id="getDirectoryDocumentsByDirectoryId" resultMap="systemDirctoryDocumentDTOMap"
+            resultType="java.util.List">
+       SELECT
+       ID,
+       SYSTEM_DIRECTORY_ID,
+      <!--  PROJECT_TYPE, -->
+       DOCUMENT_NAME,
+       DOCUMENT_TYPE,
+      <!--  DOCUMENT_TYPE2, -->
+       SAVE_TYPE,
+       CHECKOUT_STATUS,
+       CHECKOUT_USER_ID,
+       CASE WHEN CHECKOUT_USER_ID IS NOT NULL THEN (SELECT TUI.USER_NAME FROM tbl_user_info TUI WHERE TUI.ID = CHECKOUT_USER_ID LIMIT 1) ELSE NULL END AS "CHECKOUT_USER_NAME",
+       DOCUMENT_S3_BUCKET,
+       DOCUMENT_S3_KEY,
+       DOCUMENT_TEMP_S3_KEY,
+       CREATE_BY,
+       CASE WHEN CREATE_BY IS NOT NULL THEN (SELECT TUI.USER_NAME FROM tbl_user_info TUI WHERE TUI.ID = CREATE_BY LIMIT 1) ELSE NULL END AS "CREATE_USER_NAME",
+       CREATE_DATE,
+       LAST_UPDATE_BY,
+       CASE WHEN LAST_UPDATE_BY IS NOT NULL THEN (SELECT TUI.USER_NAME FROM tbl_user_info TUI WHERE TUI.ID = LAST_UPDATE_BY LIMIT 1) ELSE NULL END AS "UPDATE_USER_NAME",
+       LAST_UPDATE_DATE
+       FROM tbl_system_directory_document
+       WHERE
+       SYSTEM_DIRECTORY_ID = #{directoryId}
+       <!-- AND PROJECT_TYPE = 2 -->
+       AND STATUS = 1
+   </select>
+
+    <select id="existRelatedDocuments" resultType="java.lang.Boolean">
+        SELECT
+        CASE WHEN COUNT(*) >0 THEN 1 ELSE 0 END AS "exist"
+        FROM tbl_system_directory_document
+        WHERE STATUS = 1
+        AND SYSTEM_DIRECTORY_ID IN
+        <foreach collection="directoryIds" item="item1" open="(" separator="," close=")"
+                 index="index1">
+            #{item1}
+        </foreach>
+    </select>
+
+    <select id="selectUploadedDocumentForUpdate" resultMap="systemDirctoryDocumentMap"
+            parameterType="cn.pioneeruniverse.project.entity.TblSystemDirectoryDocument">
+        SELECT
+        ID,
+        DOCUMENT_VERSION
+        FROM tbl_system_directory_document
+        WHERE
+        SYSTEM_DIRECTORY_ID = #{systemDirectoryId}
+        AND PROJECT_TYPE = 2
+        AND DOCUMENT_NAME = #{documentName}
+        AND SAVE_TYPE = 1
+        AND STATUS = 1
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
+    <select id="getAllDirectoryDocuments" resultMap="systemDirctoryDocumentMap" resultType="java.util.List">
+        SELECT
+        ID,
+        SYSTEM_DIRECTORY_ID,
+        PROJECT_TYPE,
+        DOCUMENT_NAME,
+        DOCUMENT_TYPE2,
+        SAVE_TYPE,
+        CHECKOUT_STATUS,
+        CHECKOUT_USER_ID,
+        DOCUMENT_S3_BUCKET,
+        DOCUMENT_S3_KEY,
+        DOCUMENT_TEMP_S3_KEY,
+        LAST_UPDATE_BY,
+        LAST_UPDATE_DATE
+        FROM tbl_system_directory_document
+        <where>
+            SYSTEM_DIRECTORY_ID = #{directoryId}
+            <if test="excludeId != null">
+                AND ID != #{excludeId}
+            </if>
+            AND PROJECT_TYPE = 2
+            AND STATUS = 1
+        </where>
+    </select>
+
+    <insert id="insertDirectoryDocument" parameterType="cn.pioneeruniverse.project.entity.TblSystemDirectoryDocument"
+            useGeneratedKeys="true" keyProperty="id">
+      INSERT INTO tbl_system_directory_document(
+        SYSTEM_DIRECTORY_ID,
+      <!--   PROJECT_TYPE, -->
+        DOCUMENT_NAME,
+        DOCUMENT_VERSION,
+        DOCUMENT_TYPE,
+        SAVE_TYPE,
+        DOCUMENT_S3_BUCKET,
+        DOCUMENT_S3_KEY,
+        STATUS,
+        CREATE_BY,
+        CREATE_DATE,
+        LAST_UPDATE_BY,
+        LAST_UPDATE_DATE
+        ) VALUES (
+         #{systemDirectoryId},
+         <!-- #{projectType}, -->
+         #{documentName},
+         #{documentVersion},
+         #{documentType},
+         #{saveType},
+         #{documentS3Bucket},
+         #{documentS3Key},
+         #{status},
+         #{createBy},
+         #{createDate},
+         #{lastUpdateBy},
+         #{lastUpdateDate}
+        )
+    </insert>
+
+    <update id="updateForSameDirectoryDocument"
+            parameterType="cn.pioneeruniverse.project.entity.TblSystemDirectoryDocument">
+        UPDATE tbl_system_directory_document SET
+        DOCUMENT_VERSION = #{documentVersion},
+        DOCUMENT_TYPE2 = #{documentType2},
+        DOCUMENT_S3_BUCKET = #{documentS3Bucket},
+        DOCUMENT_S3_KEY = #{documentS3Key},
+        LAST_UPDATE_BY = #{lastUpdateBy},
+        LAST_UPDATE_DATE = #{lastUpdateDate}
+        WHERE ID = #{id}
+    </update>
+
+    <delete id="delDirectoryDocument" parameterType="cn.pioneeruniverse.project.entity.TblSystemDirectoryDocument">
+        DELETE FROM tbl_system_directory_document WHERE ID = #{id}
+    </delete>
+
+    <resultMap type="cn.pioneeruniverse.project.entity.TblSystemDirectoryDocument" id="systemDirctoryDocumentMap">
+        <id column="ID" property="id"/>
+        <result column="SYSTEM_ID" property="systemId"/>
+        <result column="SYSTEM_DIRECTORY_ID" property="systemDirectoryId"/>
+        <result column="PROJECT_TYPE" property="projectType"/>
+        <result column="REQUIREMENT_ID" property="requirementId"/>
+        <result column="DOCUMENT_NAME" property="documentName"/>
+        <result column="DOCUMENT_VERSION" property="documentVersion"/>
+        <result column="DOCUMENT_TYPE1" property="documentType1"/>
+        <result column="DOCUMENT_TYPE2" property="documentType2"/>
+        <result column="SAVE_TYPE" property="saveType"/>
+        <result column="CHECKOUT_STATUS" property="checkoutStatus"/>
+        <result column="CHECKOUT_USER_ID" property="checkoutUserId"/>
+        <result column="DOCUMENT_S3_BUCKET" property="documentS3Bucket"/>
+        <result column="DOCUMENT_S3_KEY" property="documentS3Key"/>
+        <result column="DOCUMENT_MONGO_KEY" property="documentMongoKey"/>
+        <result column="DOCUMENT_TEMP_S3_KEY" property="documentTempS3Key"/>
+        <result column="DOCUMENT_TEMP_MONGO_KEY" property="documentTempMongoKey"/>
+        <result column="STATUS" property="status"/>
+        <result column="CREATE_BY" property="createBy"/>
+        <result column="CREATE_DATE" property="createDate"/>
+        <result column="LAST_UPDATE_BY" property="lastUpdateBy"/>
+        <result column="LAST_UPDATE_DATE" property="lastUpdateDate"/>
+    </resultMap>
+
+    <resultMap id="systemDirctoryDocumentDTOMap" type="cn.pioneeruniverse.project.entity.TblSystemDirectoryDocument"
+               extends="systemDirctoryDocumentMap">
+        <result column="CHECKOUT_USER_NAME" property="checkOutUserName"/>
+        <result column="CREATE_USER_NAME" property="createUserName"/>
+        <result column="UPDATE_USER_NAME" property="updateUserName"/>
+        <result column="DOCUMENT_TYPE_NAME" property="documentTypeName"/>
+        <result column="EXIST_RELATED_INFO" property="existRelatedInfo"/>
+    </resultMap>
+
+
+</mapper>

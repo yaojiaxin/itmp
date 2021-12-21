@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.pioneeruniverse.project.dao.mybatis.DeptInfoMapper">
+  <select id="selectDeptId" parameterType="java.lang.String" resultType="long">
+  	select ID from tbl_dept_info where DEPT_NAME like concat("%",#{deptName},"%") 
+  </select>
+  
+  <select id="selectDeptName" parameterType="java.lang.Long" resultType="string">
+  	select DEPT_NAME from tbl_dept_info where ID = #{deptId}
+  </select>
+  
+  <select id="selectAllDeptName" resultType="string">
+  	select DEPT_NAME from tbl_dept_info 
+  </select>
+  
+  
+  <select id="findIdByDeptNumber" parameterType="String" resultType="long">
+  	select ID from TBL_DEPT_INFO WHERE DEPT_NUMBER = #{deptNumber} AND STATUS=1
+  </select>
+  
+  <select id="selectDeptIds" parameterType="java.lang.String" resultType="long">
+  	select ID from tbl_dept_info where DEPT_NAME like concat("%",#{deptName},"%") and STATUS = 1
+  </select>
+  
+  <select id="getDeptNumById" parameterType="java.lang.Long" resultType="string">
+  	select DEPT_NUMBER from tbl_dept_info where ID = #{deptId}
+  </select>
+  
+  <select id="getDeptIdByNumber" parameterType="java.lang.String" resultType="long">
+  	select ID from tbl_dept_info where DEPT_NUMBER = #{deptNumber}
+  </select>
+</mapper>

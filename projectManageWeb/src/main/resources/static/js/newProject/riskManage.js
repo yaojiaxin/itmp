@@ -1,0 +1,468 @@
+/**************
+*  风险管理
+*  niexingquan
+*  2019-11-29
+*/
+$(() => {
+  pageInit();
+  formValidator();
+  refactorFormValidator();
+  downOrUpButton();
+  buttonClear();
+  $(document).on('change', '#riskProbability', function () {
+    riskPriority_give();
+  })
+  $(document).on('change', '#riskFactor', function () {
+    riskPriority_give();
+  })
+})
+
+//优先级赋值
+function riskPriority_give() {
+  if ($('#riskProbability').val() && $('#riskFactor').val()) {
+    let _val = parseInt($('#riskProbability').val()) * parseInt($('#riskFactor').val());
+    let _lea = '';
+    if (_val >= 10) {
+      _lea = 1;
+    } else if (7 <= _val && _val < 10) {
+      _lea = 2;
+    } else if (4 <= _val && _val < 7) {
+      _lea = 3;
+    } else if (_val < 4) {
+      _lea = 4;
+    }
+    $('#riskPriority').selectpicker('val', _lea);
+  }
+}
+
+//表格数据加载
+function pageInit() {
+  let _postData = $('#project_type').val() == 1 ? 'projectId' : 'programId';
+  $("#project_list").jqGrid({
+    url: $('#project_type').val() == 1 ? '/projectManage/risk/getRiskInfo' : '/projectManage/risk/getRiskInfoByProgram',
+    datatype: 'json',
+    mtype: "POST",
+    height: 'auto',
+    width: $(".content-table").width() * 0.999,
+    postData: {
+      [_postData]: $("#projectId").val()
+    },
+    colNames: ['id', '编号', '风险描述', '优先级', '影响', '状态', '缓解措施', '责任人', '缓解措施执行情况', '操作'],
+    colModel: [
+      { name: 'id', hidden: true },
+      { name: 'number', sortable: false },
+      { name: 'riskDescription', sortable: false },
+      { name: 'riskPriorityName', sortable: false },
+      { name: 'riskInfluence', sortable: false },
+      { name: 'statusName', sortable: false },
+      { name: 'copingStrategy', sortable: false },
+      { name: 'responsibleUser', sortable: false },
+      { name: 'copingStrategyRecord', width: 150, sortable: false },
+      {
+        name: '操作', align: "center", fixed: true, sortable: false, resize: false, search: false, width: 130,
+        formatter: function (value, grid, rows, state) {
+          var row = JSON.stringify(rows).replace(/"/g, '&quot;');
+          var span_ = "<span>&nbsp;|&nbsp;</span>";
+          var a = '<a class="a_style" onclick="addProject(2,' + rows.id + ')">编辑</a>';
+          var b = '<a class="a_style" onclick="addProject(3,' + rows.id + ')">查看</a>';
+          var c = '<a class="a_style" onclick="_delete(' + rows.id + ')">删除</a>';
+          var opt_status = [];
+          opt_status.push(a);
+          opt_status.push(b);
+          opt_status.push(c);
+          return opt_status.join(span_);
+        }
+      },
+    ],
+    rowNum: 10,
+    rowTotal: 200,
+    rowList: [10, 20, 30],
+    rownumWidth: 30,
+    sortable: false,
+    loadtext: "数据加载中......",
+    viewrecords: true, //是否要显示总记录数 
+    jsonReader: {
+      repeatitems: false,
+      root: "data",
+    },
+    gridComplete: function () {
+    },
+    beforeRequest: function () {
+      $("#loading").css('display', 'block');
+    },
+    loadComplete: function () {
+      $("#loading").css('display', 'none');
+    }
+  }).trigger("reloadGrid");
+}
+
+//清空value
+function _clear_val(parent) {
+  $(parent).find('input').each(function (idx, val) {
+    $(val).val('').removeAttr('disabled').removeClass('bor_none shadow_none');
+    $(val).parent().parent().find('.redStar').removeClass('_hide');
+  })
+  $(parent).find('textarea').each(function (idx, val) {
+    $(val).val('').css({ height: 'unset' }).removeAttr('disabled').removeClass('bor_none shadow_none');
+    $(val).parent().parent().find('.redStar').removeClass('_hide');
+    $(val).removeClass('ov_hidden');
+  })
+  $(parent).find('select').each(function (idx, val) {
+    $(val).val('');
+    $(val).parent().parent().find('.bootstrap-select').removeClass('shadow_none');
+    $(val).parent().parent().find('.dropdown-toggle').removeClass('bor_none').children().removeClass('col_black');;
+    $(val).parent().parent().find('.dropdown-toggle').removeAttr('disabled');
+    $(val).parent().parent().find('.bs-caret').removeClass('_hide');
+    $(val).parent().parent().parent().find('.redStar').removeClass('_hide');
+  })
+  $('.selectpicker').selectpicker('refresh');
+  $('#add_modal').find('.modal-dialog').removeClass('_Max_dialog');
+  $('#add_modal').find('.modal-body').removeClass('bg_f2').find('.check_tit').hide();
+  $('#add_modal').find('.modal-body').children().eq(0).removeClass('def_col_25').addClass('def_col_36').siblings().hide();
+  $('#add_modal').find('.modal-footer').children().eq(1).text('取消');
+  $('#add_modal').find('.modal-footer').children().eq(0).show();
+  $("#add_tit").text('新建风险记录');
+  $("#edit_id").val('');
+}
+
+//新建,编辑,查看
+function addProject(type, ID) {
+  _clear_val('#add_form');
+  if (type == 2 || type == 3) {
+    $.ajax({
+      type: "post",
+      url: "/projectManage/risk/getRiskInfoById",
+      dataType: "json",
+      data: {
+        id: ID
+      },
+      beforeSend: function () {
+        $("#loading").css('display', 'block');
+      },
+      success: function (result) {
+        var data = result.data;
+        if (result.status == 1) {
+          if (type == 2 || type == 3) {
+            $("#add_tit").text('编辑风险记录');
+            $("#edit_id").val(data.id);
+            for (var key in data) {
+              $('#add_form').find('input').each(function (idx, val) {
+                var name = $(val).attr("name");
+                if (key == name) {
+                  $(val).val(data[key]);
+                }
+                if (type == 3) {
+                  $(val).addClass('bor_none shadow_none').attr({ 'placeholder': '', 'disabled': 'disabled' });
+                  $(val).parent().parent().find('.redStar').addClass('_hide');
+                }
+              })
+              $('#add_form').find('select').each(function (idx, val) {
+                let name = $(val).attr("name");
+                if (key == name) {           //编辑
+                  $(val).val(data[key]);
+                  $('.selectpicker').selectpicker('refresh');
+                }
+                if (type == 3) {                  //查看
+                  $(val).parent().parent().find('.bootstrap-select').addClass('shadow_none');
+                  $(val).parent().parent().find('.dropdown-toggle').addClass('bor_none').attr('disabled', 'disabled').children().addClass('col_black');
+                  $(val).parent().parent().find('.bs-caret').addClass('_hide');
+                  $(val).parent().parent().parent().find('.redStar').addClass('_hide');
+                  let _html = $(val).parent().parent().find('.dropdown-toggle').html().replace('请选择', '');
+                  $(val).parent().parent().find('.dropdown-toggle').html(_html);
+                }
+              })
+              $('#add_form').find('textarea').each(function (idx, val) {
+                let name = $(val).attr("name");
+                if (key == name && type == 2) {
+                  $(val).val(data[key]);
+                }
+                if (key == name && type == 3) {
+                  let len = (data[key].split('\n')).length;
+                  $(val).val(data[key]).css({ height: len * 30 + 'px' });
+                  $(val).addClass('bor_none shadow_none p_t_0').attr({ 'placeholder': '', 'disabled': 'disabled' });
+                  $(val).parent().parent().find('.redStar').addClass('_hide');
+                }
+              })
+            }
+            $('#responsibleUserName').val(data['responsibleUser']);
+          }
+          if (type == 3) {
+            var logs = result.logs;
+            $("#add_tit").text('查看风险记录');
+            $('#add_modal').find('.modal-dialog').addClass('_Max_dialog');
+            $('#add_modal').find('.modal-body').addClass('bg_f2').find('.check_tit').show();
+            $('#add_modal').find('.modal-body').children().eq(0).removeClass('def_col_36').addClass('def_col_25').siblings().show();
+            $('#add_modal').find('.modal-footer').children().eq(1).text('关闭');
+            $('#add_modal').find('.modal-footer').children().eq(0).hide();
+            $('#logs_body').empty();
+            $('.btn_clear').hide();
+            $('textarea').addClass('ov_hidden');
+            logs.length && logs.map(function (val, idx) {
+              let _className = val.logType == '新增风险' ? '' : 'logDiv_contRemark';
+              $('#logs_body').append(`
+                  <div class="logDiv">
+                    <div class="logDiv_title">
+                      <span class="orderNum"></span>
+                      <span>${val.logType}</span>&nbsp;&nbsp;&nbsp;
+                      <span>${val.userName}  | ${val.userAccount}</span>&nbsp;&nbsp;&nbsp;
+                      <span>${val.createDate}</span>
+                    </div>
+                    <div class="logDiv_cont">
+                      <div class="logDiv_contBorder">
+                        <div class="${_className}">
+                          <span>${val.logDetail || ''}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                `);
+            })
+          }
+          $("#loading").css('display', 'none');
+          $("#add_modal").modal('show');
+        } if (result.status == 2) {
+          layer.alert(result.errorMessage, { icon: 2 });
+        }
+      }
+    });
+  }
+  if (!type) {
+    $('#responsibleUserId').val($('#_userId').val());
+    $('#responsibleUserName').val($('#_userName').val());
+    $("#add_modal").modal('show');
+  }
+}
+
+//新增,编辑提交
+function add_submit() {
+  $('#add_form').data('bootstrapValidator').validate();
+  if (!$('#add_form').data("bootstrapValidator").isValid()) {
+    return;
+  }
+  var submit_data = {};
+  $('#add_form').find('input').each(function (idx, val) {
+    var id = $(val).attr("name");
+    submit_data[id] = $.trim($(val).val());
+  })
+  $('#add_form').find('select').each(function (idx, val) {
+    var id = $(val).attr("name");
+    submit_data[id] = $(val).val();
+  })
+  $('#add_form').find('textarea').each(function (idx, val) {
+    var id = $(val).attr("name");
+    submit_data[id] = $(val).val();
+  })
+  if ($("#edit_id").val()) {
+    submit_data['id'] = $("#edit_id").val();
+  } else {
+    if($('#project_type').val() == 1){
+      submit_data['projectId'] = $("#projectId").val();
+    }else{
+      submit_data['programId'] = $("#projectId").val();
+    }
+  }
+  delete submit_data.responsibleUserName;
+  $.ajax({
+    type: "post",
+    url: $("#edit_id").val() ? "/projectManage/risk/updateRisk" : "/projectManage/risk/insertRiskInfo",
+    dataType: "json",
+    contentType: "application/json; charset=utf-8",
+    data: JSON.stringify(submit_data),
+    beforeSend: function () {
+      $("#loading").css('display', 'block');
+    },
+    success: function (data) {
+      if (data.status == 1) {
+        layer.alert("提交成功", { icon: 1 });
+        $("#add_modal").modal("hide");
+        $("#project_list").trigger("reloadGrid");
+      } if (data.status == 2) {
+        layer.alert("提交失败", { icon: 2 });
+      }
+      $("#loading").css('display', 'none');
+    }
+  });
+}
+
+//删除记录
+function _delete(ID) {
+  layer.confirm('确定要删除吗?', {
+    btn: ['确定', '取消'],
+    icon: 2,
+    title: "提示"
+  }, function () {
+    $.ajax({
+      type: "post",
+      url: "/projectManage/risk/deleteRiskInfo",
+      dataType: "json",
+      data: {
+        id: ID
+      },
+      beforeSend: function () {
+        $("#loading").css('display', 'block');
+      },
+      success: function (data) {
+        if (data.status == 1) {
+          layer.alert("删除成功", { icon: 1 });
+          $("#project_list").trigger("reloadGrid");
+        } if (data.status == 2) {
+          layer.alert("删除失败", { icon: 2 });
+        }
+        $("#loading").css('display', 'none');
+      }
+    });
+  })
+}
+
+//表单校验
+function formValidator() {
+  let form_arr = ['riskDescription', 'riskType', 'riskFactor', 'riskProbability', 'riskPriority', 'riskInfluence', 'riskTriggers', 'riskStatus'];
+  // let fields = {};
+  // form_arr.map((val, idx) => {
+  // })
+  $('#add_form').bootstrapValidator({
+    message: '此项不能为空',//通用的验证失败消息
+    feedbackIcons: {
+      valid: 'glyphicon glyphicon-ok',
+      invalid: 'glyphicon glyphicon-remove',
+      validating: 'glyphicon glyphicon-refresh'
+    },
+    fields: {
+      riskDescription: {
+        validators: {
+          notEmpty: {
+            message: '此项不能为空'
+          }
+        }
+      },
+      riskType: {
+        validators: {
+          notEmpty: {
+            message: '此项不能为空'
+          }
+        }
+      },
+      riskFactor: {
+        validators: {
+          notEmpty: {
+            message: '此项不能为空'
+          }
+        }
+      },
+      riskProbability: {
+        validators: {
+          notEmpty: {
+            message: '此项不能为空'
+          }
+        }
+      },
+      riskInfluence: {
+        trigger: 'change',
+        validators: {
+          notEmpty: {
+            message: '此项不能为空'
+          }
+        }
+      },
+      riskTriggers: {
+        trigger: 'change',
+        validators: {
+          notEmpty: {
+            message: '此项不能为空'
+          }
+        }
+      },
+      riskStatus: {
+        validators: {
+          notEmpty: {
+            message: '此项不能为空'
+          }
+        }
+      },
+    }
+  })
+}
+
+//重构表单验证
+function refactorFormValidator() {
+  $('#add_modal').on('hidden.bs.modal', function () {
+    $("#add_form").data('bootstrapValidator').destroy();
+    $('#add_form').data('bootstrapValidator', null);
+    formValidator();
+  })
+}
+
+function userTableShowAll() {
+  $("#userTable").bootstrapTable('destroy');
+  $("#userTable").bootstrapTable({
+    url: "/system/user/getAllUserModal2",
+    method: "post",
+    queryParamsType: "",
+    pagination: true,
+    sidePagination: "server",
+    contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+    pageNumber: 1,
+    pageSize: 10,
+    pageList: [5, 10, 15],
+    singleSelect: true,//单选
+    queryParams: function (params) {
+      var param = {
+        userName: $.trim($("#userName").val()),
+        companyName: $("#companyName").val(),
+        deptName: $("#deptName").val(),
+        pageNumber: params.pageNumber,
+        pageSize: params.pageSize,
+      }
+      return param;
+    },
+    columns: [{
+      checkbox: true,
+      width: "30px"
+    }, {
+      field: "id",
+      title: "id",
+      visible: false,
+      align: 'center'
+    }, {
+      field: "userName",
+      title: "姓名",
+      align: 'center'
+    }, {
+      field: "userAccount",
+      title: "用户名",
+      align: 'center'
+    }, {
+      field: "companyName",
+      title: "所属公司",
+      align: 'center'
+    }, {
+      field: "deptName",
+      title: "所属处室",
+      align: 'center'
+    }],
+    onLoadSuccess: function () {
+      $("#userModal").modal('show');
+    },
+    onLoadError: function () {
+
+    },
+  });
+}
+
+function clearSearchUser() {
+  $("#userName").val('');
+  $("#deptName").val('');
+  $("#companyName").val('');
+}
+
+function commitUser() {
+  var selectContent = $("#userTable").bootstrapTable('getSelections')[0];
+  if (typeof (selectContent) == 'undefined') {
+    layer.alert('请选择一列数据！', { icon: 0 });
+    return false;
+  } else {
+    $("#responsibleUserId").val(selectContent.id);
+    $("#responsibleUserName").val(selectContent.userName).change();
+    $("#userModal").modal("hide");
+  }
+}

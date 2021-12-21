@@ -1,0 +1,1116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.pioneeruniverse.system.dao.mybatis.user.UserDao">
+    <select id="getAllUserModalCount2" parameterType="map" resultType="int">
+        select count(*) from (
+        SELECT DISTINCT dept.DEPT_NAME,company.company_NAME,userinfo.ID
+        ID,userinfo.USER_ACCOUNT,userinfo.USER_NAME,userinfo.EMPLOYEE_NUMBER
+        FROM
+        <choose>
+            <when test="projectIds!=null and projectIds!=''">
+                (SELECT userinfo2.USER_NAME,userinfo2.USER_ACCOUNT
+                FROM TBL_USER_INFO userinfo2
+                LEFT JOIN tbl_project_group_user pgUser ON pgUser.USER_ID = userinfo2.ID
+                LEFT JOIN tbl_project_group pg ON pg.ID = pgUser.PROJECT_GROUP_ID
+                LEFT JOIN tbl_project_info project ON project.ID = pg.PROJECT_ID
+                WHERE project.ID IN
+                <foreach collection="projectIds.split(',')" item="item" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+                )userinfo
+            </when>
+            <otherwise>
+                TBL_USER_INFO userinfo
+            </otherwise>
+        </choose>
+        LEFT JOIN TBL_DEPT_INFO dept on dept.ID = userinfo.DEPT_ID AND dept.STATUS=1
+        LEFT JOIN tbl_company_info company on company.ID = userinfo.company_id AND company.STATUS=1
+        <where>
+            <if test="user.userName != null and user.userName != ''">
+                AND userinfo.USER_NAME LIKE CONCAT('%',#{user.userName},'%')
+            </if>
+            <if test="user.deptName != null and user.deptName != ''">
+                AND dept.DEPT_NAME LIKE CONCAT('%',#{user.deptName},'%')
+            </if>
+            <if test="user.companyName != null and user.companyName != ''">
+                AND company.COMPANY_NAME LIKE CONCAT('%',#{user.companyName},'%')
+            </if>
+            <if test="user.id!=null and user.id!=''">
+                and userinfo.ID != #{user.id}
+            </if>
+            and userinfo.status = 1
+        </where>
+        ) count
+    </select>
+
+    <select id="getAllUserModal2" parameterType="map" resultMap="userResult">
+        SELECT DISTINCT
+        userinfo.ID,
+        dept.DEPT_NAME,
+        company.company_NAME,
+        userinfo.USER_ACCOUNT,
+        userinfo.USER_NAME,
+        userinfo.EMPLOYEE_NUMBER
+        FROM TBL_USER_INFO userinfo
+        <if test="projectIds!=null and projectIds!=''">
+            LEFT JOIN tbl_project_group_user pgUser ON pgUser.USER_ID = userinfo.ID and pgUser.status = 1
+            LEFT JOIN tbl_project_group pg ON pg.ID = pgUser.PROJECT_GROUP_ID and pg.status = 1
+            LEFT JOIN tbl_project_info project ON project.ID = pg.PROJECT_ID and project.status = 1
+        </if>
+        LEFT JOIN TBL_DEPT_INFO dept on dept.ID = userinfo.DEPT_ID AND dept.STATUS=1
+        LEFT JOIN tbl_company_info company on company.ID = userinfo.company_id AND company.STATUS=1
+        <where>
+            userinfo.status = 1
+            <if test="projectIds!=null and projectIds!=''">
+                and project.ID IN
+                <foreach collection="projectIds.split(',')" item="item" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="user.userName != null and user.userName != ''">
+                AND userinfo.USER_NAME LIKE CONCAT('%',#{user.userName},'%')
+            </if>
+            <if test="user.deptName != null and user.deptName != ''">
+                AND dept.DEPT_NAME LIKE CONCAT('%',#{user.deptName},'%')
+            </if>
+            <if test="user.companyName != null and user.companyName != ''">
+                AND company.COMPANY_NAME LIKE CONCAT('%',#{user.companyName},'%')
+            </if>
+            <if test="user.id!=null and user.id!=''">
+                and userinfo.ID != #{user.id}
+            </if>
+        </where>
+    </select>
+
+    <select id="getUser" resultMap="userRoleResult">
+        select
+        <include refid="baseColumn"/>
+        FROM TBL_USER_INFO
+        where STATUS=1
+    </select>
+
+    <select id="getAllUser" parameterType="cn.pioneeruniverse.system.entity.TblUserInfo"
+            resultMap="userRoleResult1">
+        SELECT * FROM(
+        SELECT (select tdi.DEPT_NAME from TBL_DEPT_INFO tdi where tdi.ID= DEPT_ID) DEPT_NAME,
+        (select coi.company_NAME from tbl_company_info coi where coi.ID=company_id) company_NAME,
+        <include refid="baseColumn"/>
+        FROM TBL_USER_INFO
+
+        <where>
+            <if test="userStatus == null || userStatus == ''">
+                STATUS = 1
+            </if>
+            <if test="userName != null and userName != ''">
+                AND USER_NAME LIKE CONCAT('%',#{userName},'%')
+            </if>
+            <if test="employeeNumber != null and employeeNumber != ''">
+                AND EMPLOYEE_NUMBER LIKE
+                CONCAT('%',#{employeeNumber},'%')
+            </if>
+
+            <if test="userAccount != null and userAccount != ''">
+                AND USER_ACCOUNT LIKE CONCAT('%',#{userAccount},'%')
+            </if>
+        </where>
+        ) user
+        <where>
+            <if test="projectIds != null and projectIds != ''">
+                AND user.ID in (
+                SELECT DISTINCT USER_ID FROM tbl_project_group_user where `STATUS` = 1 AND PROJECT_GROUP_ID in (
+                SELECT DISTINCT ID FROM tbl_project_group where `STATUS` = 1 AND PROJECT_ID in
+                <foreach collection="projectIds" item="item" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+                )
+                )
+            </if>
+
+            <if test="userStatus != null and userStatus != ''">
+                AND user.USER_STATUS = #{userStatus}
+            </if>
+            <if test="companyId != null and companyId != ''">
+                AND user.company_id = #{companyId}
+            </if>
+            <if test="deptId != null and deptId != ''">
+                AND user.DEPT_ID = #{deptId}
+            </if>
+            <if test="userType != null and userType != ''">
+                AND user.USER_TYPE = #{userType}
+            </if>
+            <if test="userStatus != null and userStatus != ''">
+                AND user.USER_STATUS = #{userStatus}
+            </if>
+            <if test="entryDate != null">
+                AND user.entry_date = #{entryDate}
+            </if>
+            <if test="leaveDate != null">
+                AND user.leave_date = #{leaveDate}
+            </if>
+        </where>
+    </select>
+
+
+    <select id="getAllUserModal" parameterType="hashmap" resultMap="userResult">
+        SELECT DISTINCT
+        userinfo.ID,
+        userinfo.USER_ACCOUNT,
+        userinfo.USER_NAME,
+        userinfo.EMPLOYEE_NUMBER,
+        dept.DEPT_NAME,
+        company.company_NAME
+        FROM TBL_USER_INFO userinfo
+        LEFT JOIN TBL_DEPT_INFO dept on dept.ID = userinfo.DEPT_ID AND dept.STATUS=1
+        LEFT JOIN tbl_company_info company on company.ID = userinfo.company_id AND company.STATUS=1
+        <choose>
+            <when test="systemId != null and systemId != ''">
+                LEFT JOIN tbl_project_group_user pgUser ON userinfo.ID = pgUser.USER_ID AND pgUser.STATUS=1
+                LEFT JOIN tbl_project_group projectGroup ON pgUser.PROJECT_GROUP_ID = projectGroup.ID AND
+                projectGroup.STATUS =1
+                LEFT JOIN tbl_project_info project ON project.ID = projectGroup.PROJECT_ID
+                LEFT JOIN tbl_project_system ps on ps.PROJECT_ID = project.ID and ps.status = 1 and ps.RELATION_TYPE = 1
+                LEFT JOIN tbl_system_info system ON ps.PROJECT_ID = project.ID
+            </when>
+            <otherwise>
+                <if test="projectIds != null and projectIds != ''">
+                    LEFT JOIN tbl_project_group_user pgUser ON userinfo.ID = pgUser.USER_ID AND pgUser.STATUS=1
+                    LEFT JOIN tbl_project_group projectGroup ON pgUser.PROJECT_GROUP_ID = projectGroup.ID AND
+                    projectGroup.STATUS =1
+                    LEFT JOIN tbl_project_info project ON project.ID = projectGroup.PROJECT_ID
+                </if>
+            </otherwise>
+        </choose>
+        <where>
+            userinfo.`STATUS` = 1
+            <if test="user.userName != null and user.userName != ''">
+                AND USER_NAME LIKE CONCAT('%',#{user.userName},'%')
+            </if>
+            <if test="user.deptName != null and user.deptName != ''">
+                AND dept.DEPT_NAME LIKE CONCAT('%',#{user.deptName},'%')
+            </if>
+            <if test="user.companyName != null and user.companyName != ''">
+                AND company.COMPANY_NAME LIKE CONCAT('%',#{user.companyName},'%')
+            </if>
+            <if test="notWithUserID != null and notWithUserID != ''">
+                AND userinfo.ID != #{notWithUserID}
+            </if>
+            <choose>
+                <when test="systemId != null and systemId != ''">
+                    AND system.ID = #{systemId}
+                    AND system.`STATUS` = 1
+                    <if test="projectIds != null and projectIds != ''">
+                        AND project.ID IN
+                        <foreach collection="projectIds.split(',')" item="projectId" index="index" open="("
+                                 separator=","
+                                 close=")">
+                            #{projectId}
+                        </foreach>
+                        AND project.`STATUS` = 1
+                        <if test="userPost != null and userPost !='' ">
+                            AND pgUser.USER_POST in
+                            <foreach collection="userPost.split(',')" item="item" index="index" open="(" separator=","
+                                     close=")">
+                                #{item}
+                            </foreach>
+                        </if>
+                    </if>
+                </when>
+                <otherwise>
+                    <if test="projectIds != null and projectIds != ''">
+                        AND project.ID IN
+                        <foreach collection="projectIds.split(',')" item="projectId" index="index" open="("
+                                 separator=","
+                                 close=")">
+                            #{projectId}
+                        </foreach>
+                        AND project.`STATUS` = 1
+                        <if test="userPost != null and userPost !='' ">
+                            AND pgUser.USER_POST in
+                            <foreach collection="userPost.split(',')" item="item" index="index" open="(" separator=","
+                                     close=")">
+                                #{item}
+                            </foreach>
+                        </if>
+                    </if>
+                </otherwise>
+            </choose>
+        </where>
+    </select>
+
+    <select id="getAllUserModalTotal" parameterType="hashmap" resultType="java.lang.Integer">
+        SELECT
+        COUNT(DISTINCT(user.USER_ACCOUNT))
+        FROM(
+        SELECT DISTINCT(userinfo.USER_ACCOUNT),
+        userinfo.DEPT_NAME,
+        userinfo.company_NAME,
+        userinfo.ID,
+        userinfo.USER_NAME,
+        userinfo.EMPLOYEE_NUMBER
+        FROM(
+        SELECT
+        dept.DEPT_NAME,
+        company.company_NAME,
+        userinfo.ID,
+        userinfo.USER_ACCOUNT,
+        userinfo.USER_NAME,
+        userinfo.EMPLOYEE_NUMBER
+        FROM TBL_USER_INFO userinfo
+        LEFT JOIN TBL_DEPT_INFO dept on dept.ID = userinfo.DEPT_ID AND dept.STATUS=1
+        LEFT JOIN tbl_company_info company on company.ID = userinfo.company_id AND company.STATUS=1
+        <where>
+            userinfo.`STATUS` = 1
+            <if test="user.userName != null and user.userName != ''">
+                AND USER_NAME LIKE CONCAT('%',#{user.userName},'%')
+            </if>
+            <if test="user.deptName != null and user.deptName != ''">
+                AND dept.DEPT_NAME LIKE CONCAT('%',#{user.deptName},'%')
+            </if>
+            <if test="user.companyName != null and user.companyName != ''">
+                AND company.COMPANY_NAME LIKE CONCAT('%',#{user.companyName},'%')
+            </if>
+            <if test="notWithUserID != null and notWithUserID != ''">
+                AND userinfo.ID != #{notWithUserID}
+            </if>
+        </where>
+        ) userinfo
+        <if test="(systemId != null and systemId != '') or (projectIds != null and projectIds != '')">
+            LEFT JOIN tbl_project_group_user pgUser ON userinfo.ID = pgUser.USER_ID AND pgUser.STATUS=1
+            LEFT JOIN tbl_project_group projectGroup ON pgUser.PROJECT_GROUP_ID = projectGroup.ID AND
+            projectGroup.STATUS =1
+            LEFT JOIN tbl_project_info project ON project.ID = projectGroup.PROJECT_ID
+            LEFT JOIN tbl_system_info system ON system.PROJECT_ID = project.ID
+        </if>
+        <where>
+            1=1
+            <if test="systemId != null and systemId != ''">
+                AND system.ID = #{systemId}
+                AND (system.`STATUS` = 1 or system.`STATUS` is null)
+            </if>
+            <if test="projectIds != null and projectIds != ''">
+                AND project.ID IN
+                <foreach collection="projectIds.split(',')" item="projectId" index="index" open="(" separator=","
+                         close=")">
+                    #{projectId}
+                </foreach>
+                AND project.`STATUS` = 1
+                <if test="userPost != null and userPost !='' ">
+                    AND pgUser.USER_POST in
+                    <foreach collection="userPost.split(',')" item="item" index="index" open="(" separator=","
+                             close=")">
+                        #{item}
+                    </foreach>
+                </if>
+            </if>
+        </where>
+        )user
+    </select>
+
+    <select id="getExcelAllUser" parameterType="cn.pioneeruniverse.system.entity.TblUserInfo"
+            resultMap="userRoleResult">
+		SELECT user.ID,user.USER_NAME,user.USER_ACCOUNT,company.company_NAME,dept.DEPT_NAME,user.USER_STATUS,role.ROLE_NAME,user.entry_date FROM tbl_role_info role,tbl_user_info user,tbl_user_role userRole, tbl_company_info company,tbl_dept_info dept where
+		userRole.USER_ID=user.ID and userRole.ROLE_ID=role.ID and user.company_id=company.ID and user.DEPT_ID=dept.id;
+	</select>
+
+    <select id="getUserAcc" resultMap="userResult2">
+        SELECT
+        TUI.ID,
+	    TUI.USER_ACCOUNT,
+	    TUI.USER_PASSWORD,
+	    TUI.USER_NAME,
+	    TUI.EMPLOYEE_NUMBER,
+	    TUI.EMAIL,
+	    TUI.GENDER,
+	    TUI.BIRTHDAY,
+	    TUI.USER_TYPE,
+	    TUI.COMPANY_ID,
+	    TUI.ENTRY_DATE,
+	    TUI.LEAVE_DATE,
+	    TUI.DEPT_ID,
+	    TUI.USER_STATUS,
+	    TUI.IS_ALLOWED,
+	    TUI.USER_SCM_ACCOUNT,
+	    TUI.USER_SCM_PASSWORD,
+        GROUP_CONCAT(TPG.ID) AS "MY_PROJECT_GROUP_ID",
+        GROUP_CONCAT(TPG.PROJECT_GROUP_NAME) AS "MY_PROJECT_GROUP_NAME",
+        GROUP_CONCAT(TPG.PROJECT_ID) AS "MY_PROJECT_ID"
+        FROM TBL_USER_INFO TUI
+        LEFT JOIN TBL_PROJECT_GROUP_USER TPGU ON TPGU.USER_ID = TUI.ID AND TPGU.STATUS = 1
+        LEFT JOIN TBL_PROJECT_GROUP TPG ON TPG.ID = TPGU.PROJECT_GROUP_ID AND TPG.STATUS = 1
+        WHERE BINARY TUI.USER_ACCOUNT = #{userAccount}
+        AND TUI.USER_STATUS = 1
+        AND TUI.STATUS = 1
+        GROUP BY TUI.ID
+    </select>
+
+    <select id="getUserRoleByAcc" parameterType="String" resultMap="userRoleResult">
+        SELECT
+        <include refid="baseColumn"/>
+        FROM TBL_USER_INFO
+        WHERE USER_ACCOUNT = #{userAccount}
+        AND USER_STATUS = 1
+        AND STATUS = 1
+    </select>
+    <select id="getAllUserRoleByAcc" parameterType="String" resultMap="userRoleResult">
+        SELECT
+        <include refid="baseColumn"/>
+        FROM TBL_USER_INFO
+        WHERE USER_ACCOUNT = #{userAccount}
+        AND STATUS = 1
+    </select>
+    <select id="findUserById" parameterType="Long" resultMap="userRoleResult">
+        <!-- SELECT
+        TUI.* ,TDE.DEPT_NAME,TCO.COMPANY_NAME
+        FROM TBL_USER_INFO TUI
+        LEFT JOIN TBL_DEPT_INFO TDE ON TDE.ID = TUI.DEPT_ID AND TDE.STATUS=1
+        LEFT JOIN TBL_COMPANY_INFO TCO ON TCO.ID =TUI.COMPANY_ID AND TCO.STATUS=1
+        WHERE TUI.ID = #{id} -->
+        select * from TBL_USER_INFO where ID = #{id}
+    </select>
+
+    <insert id="insertUser" parameterType="cn.pioneeruniverse.system.entity.TblUserInfo" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO TBL_USER_INFO
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                ID,
+            </if>
+            <if test="userAccount != null">
+                USER_ACCOUNT,
+            </if>
+            <if test="userPassword != null">
+                USER_PASSWORD,
+            </if>
+            <if test="userName != null">
+                USER_NAME,
+            </if>
+            <if test="email != null">
+                EMAIL,
+            </if>
+            <if test="gender != null">
+                GENDER,
+            </if>
+            <if test="birthday != null">
+                BIRTHDAY,
+            </if>
+            <if test="userType != null">
+                USER_TYPE,
+            </if>
+            <if test="companyId != null">
+                COMPANY_ID,
+            </if>
+            <if test="entryDate != null">
+                ENTRY_DATE,
+            </if>
+            <if test="employeeNumber != null">
+                EMPLOYEE_NUMBER,
+            </if>
+            <if test="userStatus != null">
+                USER_STATUS,
+            </if>
+            <if test="deptId != null">
+                DEPT_ID,
+            </if>
+            <if test="status != null">
+                STATUS,
+            </if>
+            <if test="createBy != null">
+                CREATE_BY,
+            </if>
+            <if test="lastUpdateBy != null">
+                LAST_UPDATE_BY,
+            </if>
+            <if test="lastUpdateDate != null">
+                LAST_UPDATE_DATE,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                #{id,jdbcType=BIGINT},
+            </if>
+            <if test="userAccount != null">
+                #{userAccount},
+            </if>
+            <if test="userPassword != null">
+                #{userPassword},
+            </if>
+            <if test="userName != null">
+                #{userName},
+            </if>
+            <if test="email != null">
+                #{email},
+            </if>
+            <if test="gender != null">
+                #{gender},
+            </if>
+            <if test="birthday != null">
+                #{birthday},
+            </if>
+            <if test="userType != null">
+                #{userType},
+            </if>
+            <if test="companyId != null">
+                #{companyId},
+            </if>
+            <if test="entryDate != null">
+                #{entryDate},
+            </if>
+            <if test="employeeNumber != null">
+                #{employeeNumber},
+            </if>
+            <if test="userStatus != null">
+                #{userStatus},
+            </if>
+            <if test="deptId != null">
+                #{deptId},
+            </if>
+            <if test="status != null">
+                #{status},
+            </if>
+            <if test="createBy != null">
+                #{createBy},
+            </if>
+            <if test="lastUpdateBy != null">
+                #{lastUpdateBy,jdbcType=BIGINT},
+            </if>
+            <if test="lastUpdateDate != null">
+                #{lastUpdateDate,jdbcType=TIMESTAMP},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="delUserByIds">
+        UPDATE TBL_USER_INFO SET STATUS = 2,USER_STATUS =
+        2,LAST_UPDATE_BY=#{lastUpdateBy}
+        WHERE ID IN
+        <foreach collection="list" item="userId" open="(" close=")"
+                 separator=",">
+            #{userId}
+        </foreach>
+
+    </update>
+
+    <update id="updateUser" parameterType="cn.pioneeruniverse.system.entity.TblUserInfo">
+
+        UPDATE TBL_USER_INFO
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userAccount != null and userAccount != ''">
+                USER_ACCOUNT = #{userAccount},
+            </if>
+            <if test="userPassword != null and userPassword != ''">
+                USER_PASSWORD = #{userPassword},
+            </if>
+            <if test="userName != null and userName != ''">
+                USER_NAME=#{userName},
+            </if>
+            COMPANY_ID = #{companyId},
+            <if test="employeeNumber != null and employeeNumber != ''">
+                EMPLOYEE_NUMBER = #{employeeNumber},
+            </if>
+            <if test="userStatus != null and userStatus != ''">
+                USER_STATUS = #{userStatus},
+            </if>
+            DEPT_ID = #{deptId},
+            <if test="isAllowed != null and isAllowed != ''">
+                IS_ALLOWED = #{isAllowed},
+            </if>
+            <if test="status != null and status != ''">
+                STATUS = #{status},
+            </if>
+            <if test="lastUpdateBy != null and lastUpdateBy != ''">
+                LAST_UPDATE_BY = #{lastUpdateBy},
+            </if>
+            EMAIL = #{email},
+            GENDER = #{gender},
+            BIRTHDAY = #{birthday},
+            USER_TYPE = #{userType},
+            ENTRY_DATE = #{entryDate},
+
+        </trim>
+        WHERE ID = #{id}
+    </update>
+
+    <update id="updatePassword" parameterType="cn.pioneeruniverse.system.entity.TblUserInfo">
+		UPDATE TBL_USER_INFO
+		SET
+		USER_PASSWORD = #{userPassword},
+		LAST_UPDATE_BY = #{lastUpdateBy},
+		IS_ALLOWED = 1
+		WHERE ID = #{id}
+	</update>
+
+
+    <update id="resetPassword" parameterType="cn.pioneeruniverse.system.entity.TblUserInfo">
+        UPDATE TBL_USER_INFO SET
+        USER_PASSWORD = #{userPassword},
+        LAST_UPDATE_BY = #{lastUpdateBy},
+        IS_ALLOWED = 0
+        WHERE ID = #{id}
+        <!-- <foreach collection="userIds" item="id" open="(" close=")"
+            separator=",">
+            #{id}
+        </foreach> -->
+    </update>
+
+    <!-- 获取帐号为同样前缀的用户，用于创建用户名 -->
+    <select id="getPreAccUser" parameterType="String" resultType="Long">
+		SELECT COUNT(1) FROM TBL_USER_INFO
+		WHERE USER_ACCOUNT = #{userAccount}
+		OR USER_ACCOUNT LIKE CONCAT(#{userAccount},'_%');
+	</select>
+
+    <select id="selectMaxEmpNo" resultType="String">
+		SELECT
+		MAX(EMPLOYEE_NUMBER) FROM TBL_USER_INFO
+	</select>
+
+    <select id="getCodeBaseUserDetailByUserScmAccount" parameterType="String" resultMap="userDTOResult">
+		SELECT
+		TUI.ID,
+        TUI.USER_NAME,
+        TUI.USER_SCM_ACCOUNT,
+        TUI.EMAIL,
+        TDE.DEPT_NAME,
+        TCO.COMPANY_NAME
+        FROM TBL_USER_INFO TUI
+        LEFT JOIN
+        TBL_DEPT_INFO TDE ON TDE.ID = TUI.DEPT_ID  AND TDE.STATUS = 1
+        LEFT JOIN
+        TBL_COMPANY_INFO TCO ON TCO.ID = TUI.COMPANY_ID AND TCO.STATUS = 1
+        WHERE TUI.USER_SCM_ACCOUNT = #{userScmAccount}
+        AND TUI.STATUS = 1
+        LIMIT 1
+	</select>
+
+    <select id="getUserDetailByUserIdForSvnAccountPasswordCreate" parameterType="java.lang.Long" resultMap="userResult">
+      SELECT
+      TUI.ID,
+      TUI.USER_NAME,
+      TUI.USER_SCM_ACCOUNT,
+      TUI.USER_SCM_PASSWORD,
+      TCO.COMPANY_SHORT_NAME
+      FROM TBL_USER_INFO TUI
+      LEFT JOIN
+      TBL_COMPANY_INFO TCO ON TCO.ID = TUI.COMPANY_ID AND TCO.STATUS = 1
+      WHERE TUI.ID = #{userId}
+      AND TUI.STATUS = 1
+      FOR UPDATE
+    </select>
+
+    <select id="getSvnAccountCount" parameterType="java.lang.String" resultType="java.lang.Integer">
+        SELECT COUNT(ID) AS num
+        FROM TBL_USER_INFO
+        WHERE USER_SCM_ACCOUNT = #{userScmAccount}
+    </select>
+
+    <update id="createSvnAccountByUserId">
+         UPDATE TBL_USER_INFO SET
+         USER_SCM_ACCOUNT = #{userScmAccount}
+         WHERE ID = #{id}
+         AND STATUS = 1
+         AND USER_SCM_ACCOUNT IS NULL
+    </update>
+
+    <update id="createSvnPasswordByUserId">
+        UPDATE TBL_USER_INFO SET
+        USER_SCM_PASSWORD = #{userScmPassword}
+        WHERE ID = #{id}
+        AND STATUS = 1
+        AND USER_SCM_PASSWORD IS NULL
+    </update>
+
+    <select id="getUserListForCodeBase" parameterType="cn.pioneeruniverse.common.dto.TblUserInfoDTO"
+            resultMap="userDTOResult">
+        SELECT
+        DISTINCT TUI.ID,
+        TUI.USER_NAME,
+        TUI.USER_ACCOUNT,
+        TUI.USER_SCM_ACCOUNT,
+        TUI.EMPLOYEE_NUMBER,
+        TUI.USER_SCM_PASSWORD,
+        TUI.EMAIL,
+        TDE.DEPT_NAME,
+        TCO.COMPANY_NAME,
+        GROUP_CONCAT(DISTINCT TPG.PROJECT_GROUP_NAME) AS "MY_PROJECT_GROUP_NAME"
+        FROM TBL_USER_INFO TUI
+        LEFT JOIN TBL_DEPT_INFO TDE ON TDE.ID = TUI.DEPT_ID AND TDE.STATUS = 1
+        LEFT JOIN TBL_COMPANY_INFO TCO ON TCO.ID =TUI.COMPANY_ID AND TCO.STATUS = 1
+        LEFT JOIN TBL_PROJECT_GROUP_USER TPGU ON TPGU.USER_ID = TUI.ID AND TPGU.STATUS = 1
+        LEFT JOIN TBL_PROJECT_GROUP TPG ON TPG.ID = TPGU.PROJECT_GROUP_ID AND TPG.STATUS = 1
+        <where>
+            TUI.STATUS = 1
+            <if test="userName != null and userName != ''">
+                AND TUI.USER_NAME LIKE CONCAT(CONCAT('%',#{userName},'%'))
+            </if>
+            <if test="employeeNumber != null and employeeNumber != ''">
+                AND LOWER(TUI.EMPLOYEE_NUMBER) LIKE CONCAT(CONCAT('%',LOWER(#{employeeNumber}),'%'))
+            </if>
+            <if test="deptId != null">
+                AND TDE.ID = #{deptId}
+            </if>
+            <if test="projectId != null">
+                AND TPG.PROJECT_ID = #{projectId}
+            </if>
+            <if test="projectGroupId != null and projectGroupId != ''">
+                AND TPG.ID IN
+                <foreach collection="projectGroupId.split(',')" item="item1" open="(" separator="," close=")"
+                         index="index1">
+                    #{item1}
+                </foreach>
+            </if>
+            <if test="userPost != null">
+                AND TPGU.USER_POST = #{userPost}
+            </if>
+            <if test="removeExcludeUser == true">
+                <if test="excludeUserId != null and excludeUserId != '' ">
+                    AND TUI.ID NOT IN
+                    <foreach collection="excludeUserId.split(',')" item="item1" open="(" separator="," close=")"
+                             index="index1">
+                        #{item1}
+                    </foreach>
+                </if>
+            </if>
+        </where>
+        GROUP BY TUI.ID
+        <if test="removeExcludeUser == false">
+            <if test="excludeUserId != null and excludeUserId != '' ">
+                ORDER BY FIELD(TUI.ID,
+                <foreach collection="excludeUserId.split(',')" item="item2" separator=","
+                         index="index2">
+                    #{item2}
+                </foreach>
+                ) DESC
+            </if>
+        </if>
+    </select>
+
+    <select id="getBatchUserDetailByIds" parameterType="cn.pioneeruniverse.common.dto.TblUserInfoDTO"
+            resultMap="userDTOResult">
+        SELECT
+        DISTINCT TUI.ID,
+        TUI.USER_NAME,
+        TUI.USER_ACCOUNT,
+        TUI.USER_SCM_ACCOUNT,
+        TUI.EMPLOYEE_NUMBER,
+        TUI.USER_SCM_PASSWORD,
+        TUI.EMAIL,
+        TDE.DEPT_NAME,
+        TCO.COMPANY_NAME,
+        GROUP_CONCAT(DISTINCT TPG.PROJECT_GROUP_NAME) AS "MY_PROJECT_GROUP_NAME",
+        GROUP_CONCAT(DISTINCT TPI.PROJECT_NAME) AS "MY_PROJECT_NAME"
+        FROM TBL_USER_INFO TUI
+        LEFT JOIN TBL_DEPT_INFO TDE ON TDE.ID = TUI.DEPT_ID AND TDE.STATUS = 1
+        LEFT JOIN TBL_COMPANY_INFO TCO ON TCO.ID =TUI.COMPANY_ID AND TCO.STATUS = 1
+        LEFT JOIN TBL_PROJECT_GROUP_USER TPGU ON TPGU.USER_ID = TUI.ID AND TPGU.STATUS = 1
+        LEFT JOIN TBL_PROJECT_GROUP TPG ON TPG.ID = TPGU.PROJECT_GROUP_ID AND TPG.STATUS = 1
+        LEFT JOIN TBL_PROJECT_INFO TPI ON TPG.PROJECT_ID = TPI.ID AND TPI.STATUS = 1
+        <where>
+            TUI.STATUS = 1
+            AND TUI.ID IN
+            <foreach collection="ids" item="item1" open="(" separator="," close=")"
+                     index="index1">
+                #{item1}
+            </foreach>
+        </where>
+        GROUP BY TUI.ID
+    </select>
+
+    <select id="getUserListForCodeReview" resultMap="userDTOResult">
+        SELECT
+        DISTINCT tui.ID,
+        TUI.USER_NAME,
+        TDE.DEPT_NAME,
+        TCO.COMPANY_NAME
+        FROM tbl_user_info tui
+        <if test="currentUserId != null">
+            LEFT JOIN tbl_project_group_user tpgu ON tpgu.USER_ID = tui.ID
+            LEFT JOIN tbl_project_info tpi ON tpi.ID = tpgu.PROJECT_GROUP_ID
+        </if>
+        LEFT JOIN TBL_DEPT_INFO TDE ON TDE.ID = TUI.DEPT_ID AND TDE.STATUS = 1
+        LEFT JOIN TBL_COMPANY_INFO TCO ON TCO.ID =TUI.COMPANY_ID AND TCO.STATUS = 1
+        <where>
+            TUI.STATUS = 1
+            <if test="currentUserId != null">
+                AND tpi.ID IN (
+                SELECT DISTINCT tpi1.ID
+                FROM tbl_project_group_user tpgu1
+                LEFT JOIN tbl_project_info tpi1 ON tpi1.ID = tpgu1.PROJECT_GROUP_ID
+                WHERE tpgu1.USER_ID = #{currentUserId}
+                AND tpgu1.STATUS = 1
+                AND tpi1.STATUS = 1
+                )
+            </if>
+            <if test="tblUserInfoDTO.userName != null and tblUserInfoDTO.userName != ''">
+                AND tui.USER_NAME LIKE CONCAT(CONCAT('%',#{tblUserInfoDTO.userName},'%'))
+            </if>
+            <if test="tblUserInfoDTO.deptId != null">
+                AND TDE.ID = #{tblUserInfoDTO.deptId}
+            </if>
+            <if test="tblUserInfoDTO.companyId != null">
+                AND TCO.ID = #{tblUserInfoDTO.companyId}
+            </if>
+            <if test="tblUserInfoDTO.excludeUserId != null and tblUserInfoDTO.excludeUserId != ''">
+                AND TUI.ID NOT IN
+                <foreach collection="tblUserInfoDTO.excludeUserId.split(',')" item="item" open="(" separator=","
+                         close=")"
+                         index="index">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="getUserByRoleId" parameterType="hashmap" resultMap="userResult">
+        SELECT DISTINCT
+        a.ID,
+        a.USER_ACCOUNT,
+        a.USER_PASSWORD,
+        a.USER_NAME,
+        a.EMPLOYEE_NUMBER,
+        c.ID AS "DEPT_ID",
+        c.DEPT_NAME
+        FROM
+        tbl_user_info a
+        LEFT JOIN tbl_dept_info c ON a.DEPT_ID = c.id AND c.`STATUS` = 1
+        LEFT JOIN tbl_user_role b ON a.ID = b.USER_ID AND b.`STATUS` = 1
+        WHERE
+        b.ROLE_ID = #{roleId}
+        AND a.`STATUS` = 1
+        <if test="start != null and pageSize != null">
+            LIMIT #{start},#{pageSize}
+        </if>
+    </select>
+    <select id="findUserWithNoRole" parameterType="hashmap" resultMap="userResult">
+        SELECT DISTINCT
+        a.id,
+        a.USER_NAME,
+        a.USER_ACCOUNT,
+        a.EMPLOYEE_NUMBER,
+        c.DEPT_NAME,
+        b.COMPANY_NAME
+        FROM
+        tbl_user_info a
+        LEFT JOIN tbl_company_info b ON a.COMPANY_ID = b.ID AND b.`STATUS` = 1
+        LEFT JOIN tbl_dept_info c ON a.DEPT_ID = c.ID AND c.`STATUS` = 1
+        WHERE
+        a.id NOT IN (
+        SELECT
+        user_id
+        FROM
+        tbl_user_role
+        WHERE
+        role_id = #{roleId}
+        AND STATUS = 1
+        )
+        and a.`STATUS` = 1
+        AND a.USER_STATUS = 1
+        <if test="user.userName != null and user.userName != ''">
+            AND a.USER_NAME LIKE CONCAT(CONCAT('%',#{user.userName},'%'))
+        </if>
+        <if test="user.employeeNumber != null and user.employeeNumber != ''">
+            AND a.EMPLOYEE_NUMBER LIKE CONCAT(CONCAT('%',#{user.employeeNumber},'%'))
+        </if>
+        <if test="user.deptName != null and user.deptName != ''">
+            AND c.DEPT_NAME LIKE CONCAT(CONCAT('%',#{user.deptName},'%'))
+        </if>
+        <if test="user.companyName != null and user.companyName != ''">
+            AND b.COMPANY_NAME LIKE CONCAT(CONCAT('%',#{user.companyName},'%'))
+        </if>
+        ORDER BY a.ID
+        <if test="start != null and pageSize != null">
+            LIMIT #{start},#{pageSize}
+        </if>
+    </select>
+    <select id="getAllDevUser" parameterType="map" resultType="map">
+        SELECT DISTINCT userinfo.id as USER_ID,userinfo.USER_NAME,company.COMPANY_NAME,dept.DEPT_NAME FROM tbl_user_info
+        userinfo
+        LEFT JOIN tbl_project_group_user groupuser ON
+        userinfo.ID = groupuser.USER_ID AND groupuser.`STATUS`=1
+        LEFT JOIN tbl_project_group projectgroup ON
+        groupuser.PROJECT_GROUP_ID = projectgroup.ID AND projectgroup.`STATUS`=1
+        LEFT JOIN tbl_project_info project ON
+        projectgroup.PROJECT_ID = project.ID
+        LEFT JOIN tbl_system_info system ON
+        project.ID = system.PROJECT_ID
+        LEFT JOIN tbl_requirement_feature requirement ON
+        system.ID = requirement.SYSTEM_ID
+        LEFT JOIN tbl_dev_task dev ON
+        requirement.ID = dev.REQUIREMENT_FEATURE_ID
+        LEFT JOIN tbl_dept_info dept
+        on userinfo.DEPT_ID=dept.id AND dept.`STATUS`=1
+        LEFT JOIN tbl_company_info company
+        on userinfo.COMPANY_ID=company.id AND company.`STATUS`=1
+        <where>
+            userinfo.STATUS=1
+
+            <if test="devID!=null">
+                and dev.ID =#{devID}
+            </if>
+            <if test="notWithUserID!=null">
+                AND userinfo.ID!=#{notWithUserID}
+            </if>
+            <if test="deptName != null and deptName != ''">
+                AND dept.DEPT_NAME LIKE CONCAT('%',#{deptName},'%')
+            </if>
+            <if test="companyName != null and companyName != ''">
+                AND company.COMPANY_NAME LIKE CONCAT('%',#{companyName},'%')
+            </if>
+            <if test="userName != null and userName != ''">
+                AND userinfo.USER_NAME LIKE CONCAT('%',#{userName},'%')
+            </if>
+        </where>
+        ORDER BY userinfo.id asc
+        <if test="start != null and pageSize != null">
+            limit #{start},#{pageSize}
+        </if>
+    </select>
+    <!-- 根据项目组查询 -->
+    <select id="selectByProjectId" parameterType="map" resultType="map">
+        SELECT userInfo.id as USER_ID,userInfo.USER_NAME,company.COMPANY_NAME,dept.DEPT_NAME FROM
+        tbl_user_info userInfo
+        LEFT JOIN tbl_dept_info dept
+        on userInfo.DEPT_ID=dept.id
+        LEFT JOIN tbl_company_info company
+        on userInfo.COMPANY_ID=company.id
+        <where>
+            userInfo.ID in(SELECT guser.USER_ID from tbl_project_group_user guser where guser.PROJECT_GROUP_ID=#{id})
+            and userInfo.STATUS=1
+            <if test="devID!=null">
+                and dev.ID =#{devID}
+            </if>
+            <if test="notWithUserID!=null">
+                AND userInfo.ID!=#{notWithUserID}
+            </if>
+            <if test="tblUserInfo.deptId != null and tblUserInfo.deptId != ''">
+                AND userinfo.DEPT_ID = #{tblUserInfo.deptId}
+            </if>
+            <if test="tblUserInfo.companyId != null and tblUserInfo.companyId != ''">
+                AND userinfo.company_id = #{tblUserInfo.companyId}
+            </if>
+            <if test="tblUserInfo.userName != null and tblUserInfo.userName != ''">
+                AND userInfo.USER_NAME LIKE CONCAT(CONCAT('%',#{tblUserInfo.userName},'%'))
+            </if>
+        </where>
+        ORDER BY userInfo.id asc
+        <if test="start != null and pageSize != null">
+            limit #{start},#{pageSize}
+        </if>
+    </select>
+    <!-- 新增查询 -->
+    <select id="selectById" parameterType="map" resultType="map">
+        SELECT userInfo.id as USER_ID,userInfo.USER_NAME,userInfo.USER_ACCOUNT,company.COMPANY_NAME,dept.DEPT_NAME FROM
+        tbl_user_info userInfo
+        LEFT JOIN tbl_dept_info dept
+        on userinfo.DEPT_ID=dept.id and dept.STATUS=1
+        LEFT JOIN tbl_company_info company
+        on userinfo.COMPANY_ID=company.id and company.STATUS=1
+        <where>
+            userInfo.ID IN(
+            SELECT DISTINCT pgUser.USER_ID FROM tbl_project_group_user pgUser WHERE pgUser.PROJECT_GROUP_ID in(
+            SELECT DISTINCT PgroupID.ID from tbl_project_group PgroupID WHERE PgroupID.PROJECT_ID IN(
+            SELECT DISTINCT pgroup.PROJECT_ID FROM
+            tbl_project_group pgroup
+            LEFT JOIN tbl_project_group_user guser2
+            ON pgroup.ID =guser2.PROJECT_GROUP_ID
+            WHERE guser2.USER_ID=#{id} AND pgroup.STATUS=1 AND guser2.STATUS=1
+            )))
+            and userInfo.STATUS=1
+            <if test="notWithUserID!=null">
+                AND userInfo.ID!=#{notWithUserID}
+            </if>
+            <if test="deptName != null and deptName != ''">
+                AND dept.DEPT_NAME LIKE CONCAT('%',#{deptName},'%')
+            </if>
+            <if test="companyName != null and companyName != ''">
+                AND company.COMPANY_NAME LIKE CONCAT('%',#{companyName},'%')
+            </if>
+            <if test="userName != null and userName != ''">
+                AND userInfo.USER_NAME LIKE CONCAT('%',#{userName},'%')
+            </if>
+        </where>
+        ORDER BY userInfo.id asc
+        <if test="start != null and pageSize != null">
+            limit #{start},#{pageSize}
+        </if>
+    </select>
+    <select id="getAllTestUser" parameterType="map" resultType="map">
+        SELECT DISTINCT userinfo.id as USER_ID,userinfo.USER_NAME,company.COMPANY_NAME,dept.DEPT_NAME FROM
+        tmp_db.tbl_user_info userinfo
+        LEFT JOIN tmp_db.tbl_project_group_user groupuser ON
+        userinfo.ID = groupuser.USER_ID
+        LEFT JOIN tmp_db.tbl_project_group projectgroup ON
+        groupuser.PROJECT_GROUP_ID = projectgroup.ID
+        LEFT JOIN tmp_db.tbl_project_info project ON
+        projectgroup.PROJECT_ID = project.ID
+        LEFT JOIN tmp_db.tbl_system_info system ON
+        project.ID = system.PROJECT_ID
+        LEFT JOIN tmp_db.tbl_requirement_feature requirement ON
+        system.ID = requirement.SYSTEM_ID
+        LEFT JOIN tmp_db.tbl_test_task dev ON
+        requirement.ID = dev.REQUIREMENT_FEATURE_ID
+        LEFT JOIN tmp_db.tbl_dept_info dept
+        on userinfo.DEPT_ID=dept.id
+        LEFT JOIN tmp_db.tbl_company_info company
+        on userinfo.COMPANY_ID=company.id
+        <where>
+            userinfo.STATUS=1
+
+            <if test="devID!=null">
+                and dev.ID =#{devID}
+            </if>
+            <if test="notWithUserID!=null">
+                AND userinfo.ID!=#{notWithUserID}
+            </if>
+            <if test="tblUserInfo.deptId != null and tblUserInfo.deptId != ''">
+                AND userinfo.DEPT_ID = #{tblUserInfo.deptId}
+            </if>
+            <if test="tblUserInfo.companyId != null and tblUserInfo.companyId != ''">
+                AND userinfo.company_id = #{tblUserInfo.companyId}
+            </if>
+            <if test="tblUserInfo.userName != null and tblUserInfo.userName != ''">
+                AND userinfo.USER_NAME LIKE CONCAT(CONCAT('%',#{tblUserInfo.userName},'%'))
+            </if>
+        </where>
+        ORDER BY userinfo.id asc
+        <if test="start != null and pageSize != null">
+            limit #{start},#{pageSize}
+        </if>
+    </select>
+    <sql id="baseColumn">
+		ID,USER_ACCOUNT,USER_PASSWORD,USER_NAME,EMPLOYEE_NUMBER,email,gender,birthday,user_type,
+		company_id,entry_date,leave_date,DEPT_ID,USER_STATUS,IS_ALLOWED,STATUS,CREATE_BY,
+		CREATE_DATE,LAST_UPDATE_BY,LAST_UPDATE_DATE
+	</sql>
+
+
+    <resultMap type="cn.pioneeruniverse.system.entity.TblUserInfo" id="userResult">
+        <id column="ID" property="id"/>
+        <result column="USER_ACCOUNT" property="userAccount"/>
+        <result column="USER_PASSWORD" property="userPassword"/>
+        <result column="USER_NAME" property="userName"/>
+        <result column="EMPLOYEE_NUMBER" property="employeeNumber"/>
+        <result column="email" property="email"/>
+        <result column="gender" property="gender"/>
+        <result column="birthday" property="birthday"/>
+        <result column="user_type" property="userType"/>
+        <result column="company_id" property="companyId"/>
+        <result column="company_NAME" property="companyName"/>
+        <result column="COMPANY_SHORT_NAME" property="companyShortName"/>
+        <result column="entry_date" property="entryDate"/>
+        <result column="ROLE_NAME" property="roleName"/>
+        <result column="leave_date" property="leaveDate"/>
+        <result column="DEPT_ID" property="deptId"/>
+        <result column="DEPT_NAME" property="deptName"/>
+        <result column="USER_STATUS" property="userStatus"/>
+        <result column="IS_ALLOWED" property="isAllowed"/>
+        <result column="USER_SCM_ACCOUNT" property="userScmAccount"/>
+        <result column="USER_SCM_PASSWORD" property="userScmPassword"/>
+        <result column="STATUS" property="status"/>
+        <result column="CREATE_BY" property="createBy"/>
+        <result column="CREATE_DATE" property="createDate"/>
+        <result column="LAST_UPDATE_BY" property="lastUpdateBy"/>
+        <result column="LAST_UPDATE_DATE" property="lastUpdateDate"/>
+    </resultMap>
+
+    <resultMap type="cn.pioneeruniverse.system.entity.TblUserInfo" id="userRoleResult" extends="userResult">
+        <collection property="userRoles" ofType="cn.pioneeruniverse.system.entity.TblRoleInfo"
+                    column="ID" select="cn.pioneeruniverse.system.dao.mybatis.role.RoleDao.getRoleByUserId">
+        </collection>
+    </resultMap>
+
+    <resultMap type="cn.pioneeruniverse.system.entity.TblUserInfo" id="userRoleResult1" extends="userResult">
+        <collection property="userRoles" ofType="cn.pioneeruniverse.system.entity.TblRoleInfo"
+                    column="ID" select="cn.pioneeruniverse.system.dao.mybatis.role.RoleDao.getRoleByUserId1">
+        </collection>
+    </resultMap>
+
+    <resultMap type="cn.pioneeruniverse.common.dto.TblUserInfoDTO" id="userDTOResult" extends="userResult">
+        <result column="MY_PROJECT_NAME" property="myProjectName"/>
+        <result column="MY_PROJECT_GROUP_NAME" property="myProjectGroupName"/>
+    </resultMap>
+
+    <resultMap type="cn.pioneeruniverse.system.entity.TblUserInfo" id="userResult2" extends="userResult">
+        <result column="MY_PROJECT_ID" property="myProjectId"/>
+        <result column="MY_PROJECT_GROUP_NAME" property="myProjectGroupName"/>
+        <result column="MY_PROJECT_GROUP_ID" property="myProjectGroupId"/>
+    </resultMap>
+
+    <insert id="insertUserByUnique" parameterType="cn.pioneeruniverse.system.entity.TblUserInfo" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO TBL_USER_INFO(             
+	        USER_ACCOUNT,
+	        USER_PASSWORD,
+	        USER_NAME,
+	        COMPANY_ID,
+	        EMPLOYEE_NUMBER,
+	        USER_STATUS,
+	        DEPT_ID,
+	        STATUS,
+	        CREATE_BY,
+	        LAST_UPDATE_BY,
+	        LAST_UPDATE_DATE
+		)VALUES(
+			#{userAccount},
+			#{userPassword},
+			#{userName},
+			#{companyId},
+			#{employeeNumber},
+			#{userStatus},
+			#{deptId},
+			#{status},
+			#{createBy},
+			#{lastUpdateBy,jdbcType=BIGINT},
+			#{lastUpdateDate,jdbcType=TIMESTAMP}
+		) ON DUPLICATE KEY UPDATE 
+		    USER_ACCOUNT =#{userAccount},USER_NAME =#{userName},
+		    COMPANY_ID =#{companyId},EMPLOYEE_NUMBER =#{employeeNumber},
+		    USER_STATUS =#{userStatus},DEPT_ID =#{deptId},
+		    STATUS =#{status},LAST_UPDATE_BY =#{lastUpdateBy},
+		    LAST_UPDATE_DATE =#{lastUpdateDate}
+    </insert>
+
+    <select id="getMySvnPassword" resultType="java.lang.String">
+        SELECT
+        USER_SCM_PASSWORD
+        FROM
+        tbl_user_info
+        WHERE STATUS = 1
+        AND ID = #{currentUserId}
+    </select>
+
+    <update id="updateMySvnPassword">
+        UPDATE
+        tbl_user_info
+        SET USER_SCM_PASSWORD = #{userScmPassword}
+        WHERE STATUS = 1
+        AND ID = #{currentUserId}
+        AND USER_SCM_PASSWORD IS NOT NULL
+    </update>
+
+    <select id="getUserNameById" parameterType="java.lang.Long" resultType="java.lang.String">
+        SELECT USER_NAME FROM tbl_user_info WHERE ID = #{id}
+    </select>
+
+    <select id="getUserNamesByUserIds" parameterType="java.lang.String" resultType="java.lang.String">
+        SELECT GROUP_CONCAT(USER_NAME) FROM tbl_user_info WHERE FIND_IN_SET(ID,#{ids})
+    </select>
+
+    <select id="getIdByNum" parameterType="cn.pioneeruniverse.system.entity.TblUserInfo" resultType="long">
+        select ID from tbl_user_info where EMPLOYEE_NUMBER = #{employeeNumber}
+        <if test="id!=null and id!=''">
+            and ID!=#{id}
+        </if>
+    </select>
+
+    <select id="getIdByUserAccount" parameterType="cn.pioneeruniverse.system.entity.TblUserInfo" resultType="long">
+        select ID from tbl_user_info where USER_ACCOUNT = #{userAccount}
+        <if test="id!=null and id!=''">
+            and ID!=#{id}
+        </if>
+    </select>
+
+    <select id="getAllproject" resultType="map">
+    	select ID id, PROJECT_NAME projectName from tbl_project_info where STATUS = 1 and PROJECT_STATUS != 4
+    </select>
+</mapper>

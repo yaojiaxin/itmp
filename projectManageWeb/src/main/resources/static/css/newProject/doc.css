@@ -1,0 +1,76 @@
+.headReturn {
+    width: 55px;
+    height: 36px;
+    background: url(../../images/return.png) no-repeat 8px 0;
+    border-right: 2px solid #E8E8E8;
+    cursor: pointer;
+    margin-top: 10px;
+} 
+.close span{
+	font-size: 21px;
+}
+.headr>span{
+	float: left;
+}
+.headTitle{
+	margin-left: 10px;
+	font-size: 14px;
+	font-weight: bold;
+}
+.headr{
+	position: relative;
+	padding-right: 90px;
+}
+.headRight{
+	position: absolute;
+	right: 10px;
+	top: 0;
+}
+.headRight>.btn{
+	padding: 7px 11px;
+}
+.notRequirement > .title{
+	display: none;
+	border: none !important; 
+	font-size: 13px !important; 
+}
+.notRequirement>.tableArea {
+    padding: 10px 17px;
+}
+.notRequirement{
+	display: none;                     /* 删除  */
+	background-color: inherit; 
+}
+.tableArea{
+	flex: 1;
+	border-radius: 4px;
+	background-color: #FFF;
+}
+.myTableDiv{
+	/* display: none;  */             /* 解放  */
+}
+.btnArea{
+	margin-bottom: 10px;
+}
+#return{
+	display: none;
+}
+.powerDiv_List{
+	flex: 1;
+	background-color: #FFF;
+    border-radius: 4px;
+}
+.powerDiv_List>.title{
+	font-weight: bold;
+    height: 50px;
+    padding: 15px 17px;
+    font-size: 13px !important;
+    border-bottom: 1px solid #E4E4E4;
+}
+.myTableTit{
+	font-weight: bold;  
+	padding-bottom: 10px;
+	font-size: 13px !important;
+	border-bottom: 1px solid #E4E4E4;
+	margin-bottom: 10px;
+}

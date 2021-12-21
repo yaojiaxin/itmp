@@ -1,0 +1,9 @@
+body{
+	padding: 0 20px;
+}
+.def_content{
+	padding: 8px 15px;
+}
+.parentModal,.childModal{
+	display: none;
+}

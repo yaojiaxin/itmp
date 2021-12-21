@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.pioneeruniverse.dev.dao.mybatis.TblTestSetCaseMapper">
+  <resultMap id="BaseResultMap" type="cn.pioneeruniverse.dev.entity.TblTestSetCase">
+    <id column="ID" jdbcType="BIGINT" property="id" />
+    <result column="TEST_SET_ID" jdbcType="BIGINT" property="testSetId" />
+    <result column="SYSTEM_ID" jdbcType="BIGINT" property="systemId"/>
+    <result column="CASE_NAME" jdbcType="VARCHAR" property="caseName" />
+    <result column="CASE_NUMBER" jdbcType="VARCHAR" property="caseNumber" />
+    <result column="CASE_TYPE" jdbcType="TINYINT" property="caseType" />
+    <result column="CASE_EXECUTE_RESULT" jdbcType="TINYINT" property="caseExecuteResult" />
+    <result column="CASE_PRECONDITION" jdbcType="TINYINT" property="casePrecondition" />
+    <result column="STATUS" jdbcType="TINYINT" property="status" />
+    <result column="CREATE_BY" jdbcType="BIGINT" property="createBy" />
+    <result column="CREATE_DATE" jdbcType="TIMESTAMP" property="createDate" />
+    <result column="LAST_UPDATE_BY" jdbcType="BIGINT" property="lastUpdateBy" />
+    <result column="LAST_UPDATE_DATE" jdbcType="TIMESTAMP" property="lastUpdateDate" />
+
+  	<result column="EXPECT_RESULT" jdbcType="VARCHAR" property="expectResult" />
+  	<result column="INPUT_DATA" jdbcType="VARCHAR" property="inputData" />
+  	<result column="TEST_POINT" jdbcType="VARCHAR" property="testPoint" />
+  	<result column="MODULE_NAME" jdbcType="VARCHAR" property="moduleName" />
+  	<result column="BUSINESS_TYPE" jdbcType="VARCHAR" property="businessType" />
+  </resultMap>
+  
+  <sql id="Base_Column_List">
+    ID, TEST_SET_ID,SYSTEM_ID, CASE_NAME, CASE_NUMBER, CASE_TYPE,CASE_EXECUTE_RESULT,CASE_PRECONDITION, STATUS, CREATE_BY, CREATE_DATE, 
+    LAST_UPDATE_BY, LAST_UPDATE_DATE,EXPECT_RESULT,INPUT_DATA,TEST_POINT,MODULE_NAME,BUSINESS_TYPE
+  </sql>
+  <!-- 导出 -->
+  <select id="selectByTestSetId" parameterType="map" resultType="cn.pioneeruniverse.dev.entity.TblTestSetCaseVo">
+    select setCase.ID id,CASE_NAME caseName,CASE_NUMBER caseNumber,result.CASE_EXECUTE_RESULT caseExecuteResult,
+	  CASE_PRECONDITION casePrecondition,EXPECT_RESULT expectResult,INPUT_DATA inputData,TEST_POINT testPoint,
+	  MODULE_NAME moduleName,BUSINESS_TYPE businessType
+    FROM tbl_test_set_case setCase
+	LEFT JOIN tbl_test_set_execute_round_case_result result 
+	ON result.TEST_SET_CASE_ID=setCase.ID AND  result.EXECUTE_ROUND=#{excuteRound}
+	LEFT JOIN tbl_user_info userInfo
+	ON  result.EXECUTE_USER_ID=userInfo.id
+	<where>
+		  setCase.TEST_SET_ID=#{testSetId} and setCase.STATUS=1
+	 </where>
+  </select>
+  <insert id="insert" parameterType="cn.pioneeruniverse.dev.entity.TblTestSetCase">
+  		<selectKey keyProperty="id" order="AFTER" resultType="java.lang.Long">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+  		insert into tbl_test_set_case(TEST_SET_ID,SYSTEM_ID,CASE_NAME,CASE_NUMBER,CASE_TYPE,CASE_EXECUTE_RESULT,
+	  		  CASE_PRECONDITION,STATUS,CREATE_BY,CREATE_DATE,LAST_UPDATE_BY,LAST_UPDATE_DATE,EXPECT_RESULT,
+	  		  INPUT_DATA,TEST_POINT,MODULE_NAME,BUSINESS_TYPE)
+  		values(#{testSetId},#{systemId},#{caseName},#{caseNumber},#{caseType},#{caseExecuteResult},
+	  		#{casePrecondition},#{status},#{createBy},#{createDate},#{lastUpdateBy},#{lastUpdateDate},
+	  		#{expectResult,jdbcType=VARCHAR},#{inputData,jdbcType=VARCHAR},#{testPoint,jdbcType=VARCHAR},
+	  		#{moduleName,jdbcType=VARCHAR},#{businessType,jdbcType=VARCHAR})
+  </insert>
+
+  <!-- 批量通过 -->
+  <select id="selectBatchPass" parameterType="map" resultType="map">
+  	SELECT DISTINCT setCase.ID setCaseId,result.id resultId, TEST_SET_ID testSetId,SYSTEM_ID systemmId, CASE_NAME
+	  caseName, CASE_NUMBER caseNumber, CASE_TYPE caseType,result.CASE_EXECUTE_RESULT caseExecuteResult,
+	  CASE_PRECONDITION casePrecondition,userInfo.USER_NAME userName,result.LAST_UPDATE_DATE lastUpdateDate,
+	  setCase.EXPECT_RESULT expectResult,setCase.INPUT_DATA inputData,setCase.TEST_POINT testPoint,
+	  setCase.MODULE_NAME moduleName,setCase.BUSINESS_TYPE businessType
+   	FROM tbl_test_set_case setCase
+	LEFT JOIN tbl_test_set_execute_round_case_result result 
+	ON result.TEST_SET_CASE_ID=setCase.ID AND  result.EXECUTE_ROUND=#{excuteRound}
+	LEFT JOIN tbl_user_info userInfo
+	ON  result.EXECUTE_USER_ID=userInfo.id
+	<where>
+		  setCase.TEST_SET_ID=#{testSetId} and setCase.STATUS=1
+		 <if test="caseExecuteResultList != null and caseExecuteResultList.size()>0">
+		 and ( result.CASE_EXECUTE_RESULT in
+			<foreach item="item" index="index" collection="caseExecuteResultList" open="(" separator="," close=")">
+				#{item}
+			 </foreach> 
+			<if test="unexecuted == 0 ">
+			 )
+			</if> 
+		</if>
+		<if test=" unexecuted != 0">
+				 <if test="caseExecuteResultList != null and caseExecuteResultList.size()>0">
+				  or
+				  </if>
+				 <if test="caseExecuteResultList.size()==0 ">
+				  and
+				  </if>
+				  result.CASE_EXECUTE_RESULT is null
+				   <if test="caseExecuteResultList != null and caseExecuteResultList.size()>0">
+				  )
+				  </if>
+			</if>
+		 
+	</where>
+	ORDER BY setCase.id ASC
+	<if test="start != null and pageSize != null">
+			limit #{start},#{pageSize}
+		</if>
+  </select>
+  <!-- 批量通行修改 -->
+	<update id="updateResult" parameterType="map">
+		update tbl_test_set_case set
+		CASE_EXECUTE_RESULT =2,LAST_UPDATE_BY=#{createBy},LAST_UPDATE_DATE=CURRENT_TIMESTAMP
+		where id in
+		<foreach collection="list" item="item" open="(" separator="," close=")">
+			#{item.id}
+		</foreach>
+	</update>
+  
+  <!--根据条件查询测试案例  -->
+  <select id="selectByCon" parameterType="cn.pioneeruniverse.dev.entity.TblTestSetCase" resultType="map">
+  	select setcase.ID id,setcase.CASE_NUMBER caseNumber,setcase.SYSTEM_ID systemId,system.SYSTEM_NAME systemName,
+	  setcase.CASE_NAME caseName,setcase.CASE_TYPE caseType,setcase.CASE_EXECUTE_RESULT caseExecuteResult,
+	  setcase.CASE_PRECONDITION casePrecondition,setcase.STATUS status,user.USER_NAME createBy,
+	  setcase.EXPECT_RESULT expectResult,setcase.INPUT_DATA inputData,setcase.TEST_POINT testPoint,
+	  setcase.MODULE_NAME moduleName,setcase.BUSINESS_TYPE businessType
+  	from tbl_test_set_case setcase
+  	left join tbl_system_info system on system.ID=setcase.SYSTEM_ID
+  	left join tbl_user_info user on user.ID=setcase.CREATE_BY
+  	<where>
+  		setcase.status = 1 
+  		<if test="testSetId!=null">
+  			and setcase.TEST_SET_ID=#{testSetId}
+  		</if>
+  	</where>
+  </select>
+  
+  <select id="selectCaseTree" resultType="map">
+	SELECT feature.REQUIREMENT_CODE requirementCode,feature.COMMISSIONING_WINDOW_ID commissioningWindowId,task.ID
+	taskId,task.TEST_TASK_NAME taskName,setcase.ID caseId,setcase.CASE_NAME caseName,setcase.CASE_TYPE caseType,
+	setcase.CASE_NUMBER caseNumber,task.TEST_STAGE testStage,(
+		select CASE_EXECUTE_RESULT from tbl_test_set_execute_round_case_result result
+		where result.TEST_SET_CASE_ID = setcase.ID AND result.EXECUTE_ROUND=#{executeRound}) caseExecuteResult,
+		setcase.CASE_PRECONDITION casePrecondition,system.SYSTEM_NAME systemName,system.ID systemId,
+		setcase.EXPECT_RESULT expectResult,setcase.INPUT_DATA inputData,setcase.TEST_POINT testPoint,
+	  	setcase.MODULE_NAME moduleName,setcase.BUSINESS_TYPE businessType
+	FROM tbl_requirement_feature feature
+	LEFT JOIN tbl_test_task task ON task.REQUIREMENT_FEATURE_ID=feature.ID
+	LEFT JOIN tbl_test_set testset ON testset.TEST_TASK_ID = task.ID
+	LEFT JOIN tbl_test_set_case setcase ON testset.ID = setcase.TEST_SET_ID
+	LEFT JOIN tbl_system_info system ON system.ID = setcase.SYSTEM_ID
+	WHERE testset.ID = #{testSetId}
+		<if test="executeResultCode != null and executeResultCode != ''">
+			and setcase.CASE_EXECUTE_RESULT = #{executeResultCode}
+		</if>
+	AND setcase.STATUS = 1
+  </select>
+  <update id="updateCase" parameterType="cn.pioneeruniverse.dev.entity.TblTestSetCase">
+  	update tbl_test_set_case
+  	<set>
+  		<if test="systemId!=null">
+  			SYSTEM_ID=#{systemId},
+  		</if>
+  		<if test="caseName!=null">
+  			CASE_NAME=#{caseName},
+  		</if>
+  		<if test="caseType!=null">
+  			CASE_TYPE=#{caseType},
+  		</if>
+  		<if test="caseExecuteResult!=null">
+  			CASE_EXECUTE_RESULT=#{caseExecuteResult},
+  		</if>
+  		<if test="casePrecondition!=null">
+  			CASE_PRECONDITION=#{casePrecondition},
+  		</if>
+  		<if test="status!=null">
+  			STATUS=#{status},
+  		</if>
+  		<if test="lastUpdateBy!=null">
+  			LAST_UPDATE_BY=#{lastUpdateBy},
+  		</if>
+  		<if test="lastUpdateBy!=null">
+  			LAST_UPDATE_DATE=#{lastUpdateDate},
+  		</if>
+		<if test="expectResult != null">
+			EXPECT_RESULT = #{expectResult,jdbcType=VARCHAR},
+		</if>
+		<if test="inputData != null">
+			INPUT_DATA = #{inputData,jdbcType=VARCHAR},
+		</if>
+		<if test="testPoint != null">
+			TEST_POINT = #{testPoint,jdbcType=VARCHAR},
+		</if>
+		<if test="moduleName != null">
+			MODULE_NAME = #{moduleName,jdbcType=VARCHAR},
+		</if>
+		<if test="businessType != null">
+			BUSINESS_TYPE = #{businessType,jdbcType=VARCHAR},
+		</if>
+  	</set>
+  	where ID=#{id}
+  </update>
+  
+  <update id="updateManyStatus" parameterType="map">
+  	update tbl_test_set_case set 
+  	STATUS = #{testSetCase.status},LAST_UPDATE_BY=#{testSetCase.lastUpdateBy},LAST_UPDATE_DATE=#{testSetCase.lastUpdateDate} where id in
+  	<foreach collection="list" item="item" open="(" separator="," close=")">
+  		#{item}
+  	</foreach>
+  </update>
+
+  <insert id="batchInsert">
+  	insert tbl_test_set_case(TEST_SET_ID,SYSTEM_ID,CASE_NAME,CASE_NUMBER,CASE_TYPE,CASE_EXECUTE_RESULT,
+	  CASE_PRECONDITION,CREATE_BY,CREATE_DATE,LAST_UPDATE_BY,LAST_UPDATE_DATE,EXPECT_RESULT,
+	  INPUT_DATA,TEST_POINT,MODULE_NAME,BUSINESS_TYPE) values
+  	<foreach collection="list" item="item" index="index" separator=",">
+  	 (#{item.testSetId},#{item.systemId},#{item.caseName},#{item.caseNumber},#{item.caseType},
+	  #{item.caseExecuteResult},#{item.casePrecondition},#{item.createBy},#{item.createDate},
+	  #{item.lastUpdateBy},#{item.lastUpdateDate},#{item.expectResult,jdbcType=VARCHAR},#{item.inputData,jdbcType=VARCHAR},
+	  #{item.testPoint,jdbcType=VARCHAR},#{item.moduleName,jdbcType=VARCHAR},#{item.businessType,jdbcType=VARCHAR})
+  	</foreach>
+  </insert>
+   <!--  修改执行结果 -->
+   <update id="updateExecuteResult" parameterType="map">
+  	update tbl_test_set_case set 
+  	CASE_EXECUTE_RESULT =#{caseExecuteResult},LAST_UPDATE_BY=#{createBy},LAST_UPDATE_DATE=CURRENT_TIMESTAMP  
+  	where id=#{caseId}
+  </update>
+  
+
+ <!--  修改案例 -->
+   <update id="updatetestSetCase" parameterType="map">
+  	UPDATE tbl_test_set_case setCase
+	LEFT JOIN tbl_test_set testSet
+	ON setCase.TEST_SET_ID=testSet.ID  
+  	<set>
+  		testSet.TEST_TASK_ID=#{testTaskId},
+  		setCase.SYSTEM_ID=#{systemId},
+  		setCase.CASE_NAME=#{caseName},
+  		setCase.CASE_PRECONDITION=#{casePrecondition},
+  		setCase.LAST_UPDATE_BY=#{testUserId},
+  		setCase.LAST_UPDATE_DATE=CURRENT_TIMESTAMP,
+		setCase.EXPECT_RESULT = #{expectResult},
+		setCase.INPUT_DATA = #{inputData},
+		setCase.TEST_POINT = #{testPoint},
+		setCase.MODULE_NAME = #{moduleName},
+		setCase.BUSINESS_TYPE = #{businessType}
+  	</set>
+  	where setCase.id=#{id}
+  </update>
+  <!-- 查询修改案例信息 -->
+   <select id="getTestSetCaseId" parameterType="java.lang.Long" resultType="map">
+  	SELECT setCase.ID,system.SYSTEM_NAME,SYSTEM_ID,setCase.CASE_NUMBER,testSet.TEST_TASK_ID,
+  	task.TEST_TASK_NAME,setCase.CASE_NAME,setCase.CASE_PRECONDITION,setCase.EXPECT_RESULT expectResult,
+  	setCase.INPUT_DATA inputData,setCase.TEST_POINT testPoint,setCase.MODULE_NAME moduleName,
+  	setCase.BUSINESS_TYPE businessType
+	FROM tbl_test_set_case setCase
+	LEFT JOIN tbl_test_set testSet
+	ON setCase.TEST_SET_ID=testSet.ID
+	LEFT JOIN tbl_test_task task
+	ON task.ID=testSet.TEST_TASK_ID
+	LEFT JOIN tbl_system_info system
+	ON setCase.SYSTEM_ID=system.ID
+	WHERE setCase.ID=#{id}	and setCase.STATUS=1 and task.STATUS=1 and system.STATUS=1
+  </select>
+  
+  <!-- 判断测试案例 -->
+  <select id="judgeTestSetCase" resultType="long">
+  	SELECT ID FROM tbl_test_set_case
+	WHERE TEST_SET_ID = #{testSetId} AND CASE_NUMBER = #{caseNumber}
+	AND `STATUS` = 2
+  </select>
+  
+  <select id="findCaseCount" parameterType="java.lang.Long" resultType="long">
+  	select COUNT(*) from tbl_test_set_case where TEST_SET_ID in
+  	 (select ID from tbl_test_set where TEST_TASK_ID = #{id} AND STATUS = 1) AND STATUS =1
+  </select>
+  
+  <select id="getCaseExecuteResult" parameterType="map" resultType="long">
+  	select CASE_EXECUTE_RESULT from tbl_test_set_case where TEST_SET_ID = #{testSetId} and CASE_NUMBER = #{caseNumber} and STATUS = 1
+  </select>
+  
+  <select id="getCaseCount" parameterType="java.lang.Long" resultType="long">
+  	SELECT count(*) from tbl_test_set_case WHERE TEST_SET_ID in (
+		SELECT ID from tbl_test_set WHERE TEST_TASK_ID = #{devID} and STATUS = 1
+		) and STATUS = 1
+  </select>
+</mapper>

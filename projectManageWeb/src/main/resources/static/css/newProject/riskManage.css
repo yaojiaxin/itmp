@@ -1,0 +1,71 @@
+textarea {
+  resize: none;
+}
+
+.flex {
+  display: flex;
+}
+
+.bor_b {
+  border-bottom: 1px solid rgba(215, 215, 215, 1);
+}
+
+.items_c {
+  align-items: center;
+}
+.redStar {
+  color: red;
+}
+.control-label {
+  font-weight: bold;
+}
+.shadow_none{
+  box-shadow: none;
+}
+.bor_none {
+  border: none;
+}
+.p_t_0{
+  padding-top:0; 
+}
+.bg_f2{
+  background: #f2f2f2 !important;
+}
+.bg_f2 > div{
+  background: #fff;
+  border-radius: 4px;
+}
+.check_tit{
+  font-weight: bold;
+  font-size: 13px;
+  color: #108EE9;
+  margin: 10px 10px 10px 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #c9c1c1;
+}
+._Max_dialog{
+  width: 100%;
+  padding: 0;
+}
+._Max_dialog > div{
+  top: 0 !important;
+  bottom: 0 !important;
+}
+._Max_dialog .modal-body{
+  /* padding: 10px; */
+}
+.logDiv_contRemark{
+  word-break: break-all;
+}
+.form-control[disabled]{
+  background-color: #fff;
+}
+.col_black{
+  color: #000;
+}
+.ov_hidden{
+  overflow: hidden;
+}
+.btn_clear{
+  right: 23px;
+}

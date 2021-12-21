@@ -1,0 +1,391 @@
+package cn.pioneeruniverse.system.entity;
+
+import java.util.*;
+
+import cn.pioneeruniverse.common.entity.BaseEntity;
+import com.baomidou.mybatisplus.annotations.TableField;
+import com.baomidou.mybatisplus.annotations.TableName;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+@TableName("tbl_user_info")
+public class TblUserInfo extends BaseEntity {
+
+    private static final long serialVersionUID = -1421203092465310527L;
+    private String userAccount;
+    private String userPassword;
+    private String userName;
+    private String employeeNumber;
+    private String email;
+    private String gender;
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd")
+    private Date birthday;
+    private Integer userType;
+    private Long companyId;
+    @JsonFormat(timezone = "GMT+8",pattern = "yyyy-MM-dd")
+    private Date entryDate;
+    private Date leaveDate;
+    private Long deptId;
+    private Integer userStatus;
+    private Integer isAllowed;
+    private String userScmAccount;
+    private String userScmPassword;
+
+
+    @TableField(exist = false)
+    private String roleName;
+
+    @TableField(exist = false)
+    private String companyName;
+
+    @TableField(exist = false)
+    private String companyShortName;
+
+    @TableField(exist = false)
+    private String deptName;
+
+    @TableField(exist = false)
+    private String userRfid;
+
+    @TableField(exist = false)
+    private List<TblRoleInfo> userRoles;
+
+    @TableField(exist = false)
+    private List<Long> userIds;
+
+    @TableField(exist = false)
+    private Set<String> stringPermissions;
+
+    @TableField(exist = false)
+    private Set<String> roles;
+
+    @TableField(exist = false)
+    private Set<String> stringPermissionUrls;
+
+    @TableField(exist = false)
+    private String myProjectGroupId;
+
+    @TableField(exist = false)
+    private String myProjectGroupName;
+
+    @TableField(exist = false)
+    private List<Long> roleIds;
+
+    @TableField(exist = false)
+    private String myProjectId;
+    
+    @TableField(exist = false)
+    private Long[] projectIds;
+
+
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
+    }
+
+
+    public String getUserAccount() {
+        return userAccount;
+    }
+
+    public void setUserAccount(String userAccount) {
+        this.userAccount = userAccount;
+    }
+
+    public String getUserPassword() {
+        return userPassword;
+    }
+
+    public void setUserPassword(String userPassword) {
+        this.userPassword = userPassword;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getEmployeeNumber() {
+        return employeeNumber;
+    }
+
+    public void setEmployeeNumber(String employeeNumber) {
+        this.employeeNumber = employeeNumber;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public Date getBirthday() {
+        return birthday;
+    }
+
+    public void setBirthday(Date birthday) {
+        this.birthday = birthday;
+    }
+
+    public Integer getUserType() {
+        return userType;
+    }
+
+    public void setUserType(Integer userType) {
+        this.userType = userType;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
+    }
+
+    public Date getEntryDate() {
+        return entryDate;
+    }
+
+    public void setEntryDate(Date entryDate) {
+        this.entryDate = entryDate;
+    }
+
+    public Date getLeaveDate() {
+        return leaveDate;
+    }
+
+    public void setLeaveDate(Date leaveDate) {
+        this.leaveDate = leaveDate;
+    }
+
+    public Integer getUserStatus() {
+        return userStatus;
+    }
+
+    public void setUserStatus(Integer userStatus) {
+        this.userStatus = userStatus;
+    }
+
+    public Long getDeptId() {
+        return deptId;
+    }
+
+    public void setDeptId(Long deptId) {
+        this.deptId = deptId;
+    }
+
+    public String getDeptName() {
+        return deptName;
+    }
+
+    public void setDeptName(String deptName) {
+        this.deptName = deptName;
+    }
+
+    public Integer getIsAllowed() {
+        return isAllowed;
+    }
+
+    public void setIsAllowed(Integer isAllowed) {
+        this.isAllowed = isAllowed;
+    }
+
+    public String getUserRfid() {
+        return userRfid;
+    }
+
+    public void setUserRfid(String userRfid) {
+        this.userRfid = userRfid;
+    }
+
+    public List<TblRoleInfo> getUserRoles() {
+        return userRoles;
+    }
+
+    public void setUserRoles(List<TblRoleInfo> userRoles) {
+        this.userRoles = userRoles;
+    }
+
+    public List<Long> getUserIds() {
+        return userIds;
+    }
+
+    public void setUserIds(List<Long> userIds) {
+        this.userIds = userIds;
+    }
+
+    public String getRoleName() {
+        return roleName;
+    }
+
+    public void setRoleName(String roleName) {
+        this.roleName = roleName;
+    }
+
+    public Set<String> getStringPermissions() {
+        return stringPermissions;
+    }
+
+    public void setStringPermissions(Set<String> stringPermissions) {
+        this.stringPermissions = stringPermissions;
+    }
+
+    public Set<String> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<String> roles) {
+        this.roles = roles;
+    }
+
+    public Set<String> getStringPermissionUrls() {
+        return stringPermissionUrls;
+    }
+
+    public void setStringPermissionUrls(Set<String> stringPermissionUrls) {
+        this.stringPermissionUrls = stringPermissionUrls;
+    }
+
+    public void addStringPermissions(String permission) {
+        if (this.stringPermissions == null) {
+            this.stringPermissions = new HashSet();
+        }
+        this.stringPermissions.add(permission);
+    }
+
+    public void addStringPermissions(Collection<String> permissions) {
+        if (this.stringPermissions == null) {
+            this.stringPermissions = new HashSet<>();
+        }
+        this.stringPermissions.addAll(permissions);
+    }
+
+    public void addRoles(String role) {
+        if (this.roles == null) {
+            this.roles = new HashSet<>();
+        }
+        this.roles.add(role);
+    }
+
+    public void addRoles(Collection<String> roles) {
+        if (this.roles == null) {
+            this.roles = new HashSet<>();
+        }
+        this.roles.addAll(roles);
+    }
+
+    public void addStringPermissionUrls(String permissionUrl) {
+        if (this.stringPermissionUrls == null) {
+            this.stringPermissionUrls = new HashSet<>();
+        }
+        this.stringPermissionUrls.add(permissionUrl);
+    }
+
+    public void addStringPermissionUrls(Collection<String> permissionUrls) {
+        if (this.stringPermissionUrls == null) {
+            this.stringPermissionUrls = new HashSet<>();
+        }
+        this.stringPermissionUrls.addAll(permissionUrls);
+    }
+
+    public String getUserScmAccount() {
+        return userScmAccount;
+    }
+
+    public void setUserScmAccount(String userScmAccount) {
+        this.userScmAccount = userScmAccount;
+    }
+
+    public String getUserScmPassword() {
+        return userScmPassword;
+    }
+
+    public void setUserScmPassword(String userScmPassword) {
+        this.userScmPassword = userScmPassword;
+    }
+
+    public String getCompanyShortName() {
+        return companyShortName;
+    }
+
+    public void setCompanyShortName(String companyShortName) {
+        this.companyShortName = companyShortName;
+    }
+
+    public String getMyProjectGroupId() {
+        return myProjectGroupId;
+    }
+
+    public void setMyProjectGroupId(String myProjectGroupId) {
+        this.myProjectGroupId = myProjectGroupId;
+    }
+
+    public String getMyProjectGroupName() {
+        return myProjectGroupName;
+    }
+
+    public void setMyProjectGroupName(String myProjectGroupName) {
+        this.myProjectGroupName = myProjectGroupName;
+    }
+
+	public List<Long> getRoleIds() {
+		return roleIds;
+	}
+
+	public void setRoleIds(List<Long> roleIds) {
+		this.roleIds = roleIds;
+	}
+
+    public String getMyProjectId() {
+        return myProjectId;
+    }
+
+    public void setMyProjectId(String myProjectId) {
+        this.myProjectId = myProjectId;
+    }
+
+    public Long[] getProjectIds() {
+		return projectIds;
+	}
+
+	public void setProjectIds(Long[] projectIds) {
+		this.projectIds = projectIds;
+	}
+
+	@Override
+    public String toString() {
+        return "TblUserInfo{" +
+                "userAccount='" + userAccount + '\'' +
+                ", userPassword='" + userPassword + '\'' +
+                ", userName='" + userName + '\'' +
+                ", employeeNumber='" + employeeNumber + '\'' +
+                ", email='" + email + '\'' +
+                ", gender='" + gender + '\'' +
+                ", birthday=" + birthday +
+                ", userType=" + userType +
+                ", companyId=" + companyId +
+                ", entryDate=" + entryDate +
+                ", leaveDate=" + leaveDate +
+                ", deptId=" + deptId +
+                ", userStatus=" + userStatus +
+                ", isAllowed=" + isAllowed +
+                ", userScmPassword='" + userScmPassword + '\'' +
+                '}';
+    }
+}
